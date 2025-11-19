@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Chart from "./components/Chart";
 import TopBar from "./components/TopBar";
+import BottomBar from "./components/BottomBar";
 import { useEffect } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
@@ -35,8 +36,7 @@ function App() {
       />
 
       {/* Main content */}
-      <div className="flex overflow-hidden"
-      style={{ height: 'calc(100vh - 4rem)' }}> {/* 4rem = 16 * 1rem (top bar height) */}
+      <div className="flex-1 overflow-hidden"> {/*style={{ height: 'calc(100vh - 4rem)'  4rem = 16 * 1rem (top bar height) */}
         <PanelGroup direction="horizontal">
         {/* Chart */}
         <Panel minSize={20}>
@@ -69,8 +69,10 @@ function App() {
         <button className="px-2 py-2 bg-(--red)">Btn B</button>
       </div>
       </PanelGroup>
-
     </div>
+
+    <BottomBar/>
+
   </div>
   );
 }
