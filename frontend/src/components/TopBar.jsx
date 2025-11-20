@@ -2,7 +2,7 @@ import AssetSelect from "./AssetSelect";
 import SearchBar from "./SearchBar";
 import TimeframeBtns from "./TimeframesBtns";
 
-const TopBar = ({ assets, selectedAsset, onSelectAsset, timeframe, onSelectTimeframe }) => {
+const TopBar = ({ assets, selectedAsset, onSelectAsset, timeframe, onSelectTimeframe, onOpenIndicators }) => {
 
   const options = assets.map(a => ({
     label: a.symbol,
@@ -32,7 +32,10 @@ const TopBar = ({ assets, selectedAsset, onSelectAsset, timeframe, onSelectTimef
       </div>
 
       <div className="flex w-[30%]">
-        <button className="ml-auto px-4 py-2 bg-(--red) hover:opacity-70">Action</button>
+        <button onClick={onOpenIndicators}
+        className="px-4 py-2 bg-(--red) hover:opacity-70 cursor-pointer text-black)">
+          Indicators
+        </button>
       </div>
 
     </div>
