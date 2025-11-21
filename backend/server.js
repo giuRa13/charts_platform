@@ -1,5 +1,5 @@
 const express = require("express");
-const { exec, execFile } = require("child_process");
+const { exec, execFile } = require("child_process"); // allows Node.js to run python scripts as if you typed them in the terminal
 const path = require("path");
 const cors = require("cors");
 const db = require("./db");
@@ -10,6 +10,7 @@ const PORT = 3001;
 
 app.use(express.json());
 
+// allows frontend to talk to this backend without security errors
 app.use(cors({
   origin: "http://localhost:5173"
 }));
@@ -44,7 +45,10 @@ app.get("/history/:symbol/:timeframe", async (req, res) => {
     // fetch missing candles via Python
     const pythonScript = path.join(__dirname, "scripts", "load_history.py");
     const args = [symbol, timeframe];
-    if (lastTs) args.push(lastTs + 1); 
+    //if (lastTs) args.push(String(lastTs + 1)); 
+    // This makes Python fetch the last candle again and 'INSERT OR REPLACE' it, 
+    // fixing any partial data left over from a server crash or old logic.
+    if (lastTs) args.push(String(lastTs)); 
 
     await new Promise((resolve, reject) => {
       execFile("python", [pythonScript, ...args], (err, stdout, stderr) => {

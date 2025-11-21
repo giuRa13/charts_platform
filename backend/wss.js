@@ -19,16 +19,18 @@ function initWebSocket(server) {
       try {
         const data = JSON.parse(msg);
 
-        // Forward live candle to client
+        // Forward live candle to client ( server immediately passes the data to the frontend )
         if (clientWS.readyState === WebSocket.OPEN) {
           clientWS.send(JSON.stringify(data));
         }
 
-        // Save completed candle to DB
-        if (data.k) {
+        // 2. Save ONLY completed candles to DB
+        // data.k.x === true means the candle period has closed.
+       if (data.k && data.k.x === true) {
+
           await db.saveCandles(symbol.toUpperCase(), [
             [
-              data.k.t,
+              data.k.t, // Timestamp
               parseFloat(data.k.o),
               parseFloat(data.k.h),
               parseFloat(data.k.l),

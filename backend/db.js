@@ -1,8 +1,10 @@
 const sqlite3 = require("sqlite3");
 const path = require("path");
-const DB_PATH = path.join(__dirname, "app.db");
 
+const DB_PATH = path.join(__dirname, "app.db");
+// Set a busy timeout so Node waits if Python is writing
 const db = new sqlite3.Database(DB_PATH);
+db.configure("busyTimeout", 5000); 
 
 // -----------------------
 // Promisified helpers
@@ -65,7 +67,6 @@ async function getLatestTimestamp(symbol, timeframe = "1m") {
     return row?.last || null;
 }
 
-
 const assetCache = {}; // key = symbol, value = id
 
 async function saveCandles(symbol, candles, timeframe = "1m") {
@@ -83,12 +84,11 @@ async function saveCandles(symbol, candles, timeframe = "1m") {
         assetCache[symbol] = asset_id; // cache it
     }
 
-    const stmt = db.prepare(`
+    /*const stmt = db.prepare(`
         INSERT OR REPLACE INTO assets_prices
         (asset_id, date, open, high, low, close, volume, timeframe)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
-
     return new Promise((resolve, reject) => {
         for (const c of candles) {
             stmt.run(asset_id, ...c, timeframe);
@@ -96,6 +96,34 @@ async function saveCandles(symbol, candles, timeframe = "1m") {
         stmt.finalize(err => {
             if (err) reject(err);
             else resolve();
+        });
+    });*/
+    // Use Transaction for speed and safety
+    return new Promise((resolve, reject) => {
+        db.serialize(() => {
+            db.run("BEGIN TRANSACTION");
+
+            const stmt = db.prepare(`
+                INSERT OR REPLACE INTO assets_prices
+                (asset_id, date, open, high, low, close, volume, timeframe)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `);
+
+            for (const c of candles) {
+                stmt.run(asset_id, ...c, timeframe);
+            }
+
+            stmt.finalize();
+
+            db.run("COMMIT", (err) => {
+                if (err) {
+                    console.error("Transaction commit failed", err);
+                    db.run("ROLLBACK");
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
         });
     });
 }
