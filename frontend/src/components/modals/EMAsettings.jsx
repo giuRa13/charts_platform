@@ -66,9 +66,9 @@ const EMAsettings = ({
                 />
             </div>
 
-            <div className="flex justify-end gap-2 mt-4">
-                <button onClick={onClose} className="px-3 py-1 bg-(--gray) hover:bg-white/10 cursor-pointer">Cancel</button>
-                <button onClick={handleSave} className="px-3 py-1 bg-(--red) hover:opacity-80 cursor-pointer">Save</button>
+            <div className="flex justify-end gap-2 mt-4 ">
+                <button onClick={onClose} className="px-3 py-0.5 rounded-sm bg-gray-700 text-white hover:opacity-80 cursor-pointer">Cancel</button>
+                <button onClick={handleSave} className="px-3 py-0.5 rounded-sm bg-(--red) hover:opacity-80 cursor-pointer">Save</button>
             </div>
         
         </div>

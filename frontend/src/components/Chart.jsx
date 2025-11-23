@@ -1,13 +1,22 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CandlestickSeries, createChart, CrosshairMode, HistogramSeries, LineSeries } from "lightweight-charts";
-import { useChartIndicators, updateLiveIndicators, setIndicatorsData } from "./useChartIndicators";
+import { useChartIndicators, updateLiveIndicators, setIndicatorsData } from "../hooks/useChartIndicators";
+import { useChartSettings } from "../hooks/useChartSettings";
 import Spinner from "./Spinner";
 import EMAsettings from "./modals/EMAsettings";
 import VolumeSettings from "./modals/VolumeSettings";
 import { X } from "lucide-react";
 import { Settings } from "lucide-react";
+import Clock from "./Clock";
 
-const Chart = ({selectedAsset, timeframe, panelOpen, indicators = [], onIndicatorsChange}) => {
+const Chart = ({
+    selectedAsset, 
+    timeframe, 
+    panelOpen, 
+    indicators = [], 
+    onIndicatorsChange, 
+    chartSettings
+}) => {
 
     const chartContainer = useRef();
     const chartRef = useRef();
@@ -32,24 +41,34 @@ const Chart = ({selectedAsset, timeframe, panelOpen, indicators = [], onIndicato
 
     useChartIndicators(chartRef, seriesMapRef, indicators, candlesRef);
 
+    useChartSettings(chartRef, priceSeriesRef, chartSettings);
+
     // create chart once //////////////////////////////////////////////////////////
     useEffect(() => {
         const container = chartContainer.current;
         if (!container) return;
 
         const chart = createChart(container, {
-            //autoSize: true,
             layout: { 
-                textColor: "#DCEDE3", 
-                background: { type: "solid", color: "#1e1e1e" },
+                textColor: chartSettings.textColor,
+                background: { type: "solid", color: chartSettings.backgroundColor },
                 panes: {
                     separatorColor: "#DCEDE3", // "#d83160",
                     separatorHoverColor: 'rgba(216, 46, 96, 0.1)',
                     enableResize: true,
             }},
-            grid: { vertLines: { color: "#535151ff" }, horzLines: { visible: false } },
+            grid: { 
+                vertLines: { 
+                    color: chartSettings.gridColor,
+                    visible: chartSettings.gridVertVisible 
+                }, 
+                horzLines: {
+                    color: chartSettings.gridColor, 
+                    visible: chartSettings.gridHorzVisible
+                }
+            },
+            crosshair: { mode: chartSettings.magnetMode ? CrosshairMode.Magnet : CrosshairMode.Normal },
             rightPriceScale: { borderColor: "#7c7c7cff" },
-            crosshair: { mode: CrosshairMode.Normal },
             timeScale: {
                 rightOffset: 10,
                 barSpacing: 15,
@@ -65,11 +84,11 @@ const Chart = ({selectedAsset, timeframe, panelOpen, indicators = [], onIndicato
         chartRef.current = chart;
 
         const priceSeries = chart.addSeries(CandlestickSeries, {
-            upColor: "#26a69a",
-            downColor: "#ef5350",
+            upColor: chartSettings.candleUpColor,
+            downColor: chartSettings.candleDownColor,
             borderVisible: false,
-            wickUpColor: "#26a69a",
-            wickDownColor: "#ef5350",
+            wickUpColor: chartSettings.candleUpColor,
+            wickDownColor: chartSettings.candleDownColor,
         }, 0);
 
         priceSeriesRef.current = priceSeries;
@@ -212,9 +231,10 @@ const Chart = ({selectedAsset, timeframe, panelOpen, indicators = [], onIndicato
         <div className="relative w-full h-full">
 
             <div ref={chartContainer} className="chart-container w-full h-full">
-
             {loading && <Spinner/>}
-
+            {chartSettings.showClock && (
+                <Clock color={chartSettings.clockColor}/>
+            )}
             {indicators.length > 0 && (
                 <div className="absolute top-2 left-0 text-white text-sm px-4 py-1 z-40">
                     <span className="flex items-center px-4 py-1 bg-black/30 shadow-md mb-1">Indicators : </span>
@@ -246,7 +266,6 @@ const Chart = ({selectedAsset, timeframe, panelOpen, indicators = [], onIndicato
                     ))}
                 </div>
             )}
-
             </div>
 
             {EMAsettingsOpen && editingIndicator && editingIndicator.id === "ema" && (

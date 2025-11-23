@@ -3,7 +3,7 @@ import Modal from "./Modal";
 
 const Indicators = [
     { id: "volume", label: "Volume", upColor: "#26a69a", downColor: "#ef5350" },
-    { id: "ema", label: "EMA", length: 20, color: "#f1c40f", lineWidth: 2 },
+    { id: "ema", label: "EMA", length: 20, color: "#ff772e", lineWidth: 2 },
     { id: "cvd", label: "CVD" },
     { id: "rsi", label: "RSI" },
 ];

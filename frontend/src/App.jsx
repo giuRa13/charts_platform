@@ -1,11 +1,13 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import Chart from "./components/Chart";
 import TopBar from "./components/TopBar";
 import BottomBar from "./components/BottomBar";
 import { useEffect } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { Logs } from "lucide-react";
 import IndicatorsModal from "./components/modals/IndicatorsModal";
+import ChartSettings from "./components/modals/ChartSettings";
+import { Menu } from "lucide-react";
+import { Settings } from "lucide-react";
 
 function App() {
   const [assetsList, setAssetsList] = useState([]);
@@ -16,6 +18,25 @@ function App() {
 
   const [showIndicators, setShowIndicators] = useState(false);
   const [indicators, setIndicators] = useState([]);
+
+  const [showChartSettings, setShowChartSettings] = useState(false);
+  const [chartConfig, setChartConfig] = useState({
+      backgroundColor: "#1e1e1e",
+      textColor: "#DCEDE3",
+      gridColor: "#303030",
+      gridVertVisible: true,
+      gridHorzVisible: false,
+      candleUpColor: "#26a69a",
+      candleDownColor: "#ef5350",
+      magnetMode: false,
+      showClock: false,
+      clockColor: "#DCEDE3",
+  });
+
+  // Optional: Sync watermark with selected asset
+  React.useEffect(() => {
+     setChartConfig(prev => ({ ...prev}));
+  }, [selectedAsset]);
 
   const handleAddIndicator = (indicatorId) => {
     
@@ -34,7 +55,7 @@ function App() {
             {
                 id: "ema",
                 length: 20,       
-                color: "#f1c40f" 
+                color: "#ff772e" 
             }
         ];
     }
@@ -58,6 +79,13 @@ function App() {
   return (
     <div className="w-screen h-screen flex flex-col bg-(--gray) text-(--b)">
 
+      <ChartSettings
+        open={showChartSettings}
+        onClose={() => setShowChartSettings(false)}
+        currentSettings={chartConfig}
+        onSave={setChartConfig}
+      />
+      
       <IndicatorsModal
         open={showIndicators}
         onClose={() => setShowIndicators(false)}
@@ -85,7 +113,8 @@ function App() {
             timeframe={timeframe} 
             panelOpen={isPanelOpen}
             indicators={indicators} 
-            onIndicatorsChange={setIndicators}/>
+            onIndicatorsChange={setIndicators}
+            chartSettings={chartConfig}/>
         </div>
         </Panel>
 
@@ -104,9 +133,12 @@ function App() {
       <div className="flex-shrink-0 w-18 bg-(--gray) flex flex-col p-2 border-l border-(--red)">
         <button className="mb-2 px-2 py-2 bg-(--red) flex items-center justify-center cursor-pointer hover:opacity-70"
         onClick={() => setIsPanelOpen(p => !p)}>
-          <Logs className="w-6 h-6"/>
+          <Menu className="w-6 h-6"/>
         </button>
-        <button className="px-2 py-2 bg-(--red)">Btn B</button>
+        <button className="mb-2 px-2 py-2 bg-(--red) flex items-center justify-center cursor-pointer hover:opacity-70"
+        onClick={() => setShowChartSettings(true)}>
+          <Settings className="w-6 h-6"/>
+        </button>
       </div>
       </PanelGroup>
     </div>

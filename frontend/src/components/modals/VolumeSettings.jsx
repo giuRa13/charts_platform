@@ -52,11 +52,11 @@ const VolumeSettings = ({
             />
         </div>
 
-        <div className="flex justify-start">
-            <button onClick={resetDefaults} className="px-3 py-1 bg-gray-700 text-white cursor-pointer">Default</button>
+        <div className="flex justify-end mt-2">
+            <button onClick={resetDefaults} className="px-3 py-0.5 rounded-sm bg-gray-700 text-white cursor-pointer">Default</button>
         </div>
         <div className="flex justify-end mt-4">
-          <button onClick={handleSave} className="px-3 py-1 bg-(--red) w-[50%] text-white cursor-pointer">Save</button>
+          <button onClick={handleSave} className="px-3 py-0.5 rounded-sm bg-(--red) w-[50%] text-white cursor-pointer">Save</button>
         </div>
 
       </div>
