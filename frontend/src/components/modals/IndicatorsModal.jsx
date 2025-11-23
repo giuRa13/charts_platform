@@ -2,11 +2,10 @@ import React from 'react';
 import Modal from "./Modal";
 
 const Indicators = [
-    { id: "volume", label: "Volume" },
+    { id: "volume", label: "Volume", upColor: "#26a69a", downColor: "#ef5350" },
+    { id: "ema", label: "EMA", length: 20, color: "#f1c40f", lineWidth: 2 },
     { id: "cvd", label: "CVD" },
     { id: "rsi", label: "RSI" },
-    { id: "ema50", label: "EMA 50" },
-    { id: "ema200", label: "EMA 200" },
 ];
 
 const IndicatorsModal = ({ open, onClose, onSelect }) => {

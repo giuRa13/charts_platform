@@ -5,7 +5,7 @@ import BottomBar from "./components/BottomBar";
 import { useEffect } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { Logs } from "lucide-react";
-import IndicatorsModal from "./components/IndicatorsModal";
+import IndicatorsModal from "./components/modals/IndicatorsModal";
 
 function App() {
   const [assetsList, setAssetsList] = useState([]);
@@ -18,7 +18,29 @@ function App() {
   const [indicators, setIndicators] = useState([]);
 
   const handleAddIndicator = (indicatorId) => {
-    setIndicators(prev => prev.includes(indicatorId) ? prev : [...prev, indicatorId]);
+    
+    setIndicators(prev => {
+
+      if (indicatorId === "volume") {
+        if (prev.find(ind => ind.id === "volume")) return prev;
+        return [...prev, { id: "volume" , upColor: "#26a69a", downColor: "#ef5350" }];
+      }
+
+      if (indicatorId === "ema") {
+        // Prevent add multiple ema
+        //if (prev.find(ind => ind.id === "ema" && ind.length === 20)) return prev;
+        return [
+            ...prev,
+            {
+                id: "ema",
+                length: 20,       
+                color: "#f1c40f" 
+            }
+        ];
+    }
+
+      return [...prev, { id: indicatorId }];
+    });
   };
 
   useEffect(() => {

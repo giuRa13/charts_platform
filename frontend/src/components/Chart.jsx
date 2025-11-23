@@ -1,19 +1,36 @@
-import React, { useEffect, useRef } from "react";
-import { CandlestickSeries, createChart, CrosshairMode, HistogramSeries } from "lightweight-charts";
-import { prepareVolumeData, updateLastVolume } from "../indicators/volume";
+import React, { useEffect, useRef, useState } from "react";
+import { CandlestickSeries, createChart, CrosshairMode, HistogramSeries, LineSeries } from "lightweight-charts";
+import { useChartIndicators, updateLiveIndicators, setIndicatorsData } from "./useChartIndicators";
+import Spinner from "./Spinner";
+import EMAsettings from "./modals/EMAsettings";
+import VolumeSettings from "./modals/VolumeSettings";
 import { X } from "lucide-react";
 import { Settings } from "lucide-react";
 
-const Chart = ({selectedAsset, timeframe, panelOpen, indicators, onIndicatorsChange}) => {
+const Chart = ({selectedAsset, timeframe, panelOpen, indicators = [], onIndicatorsChange}) => {
 
     const chartContainer = useRef();
     const chartRef = useRef();
 
     const priceSeriesRef = useRef(null);
-    const seriesMapRef = useRef({}); // store active indicators
+    const seriesMapRef = useRef({}); // store active indicators(drawing props)
+    const indicatorsRef = useRef(indicators); // track live indicators(volume, histograms need to know which color is up/down every time)
 
     const wsRef = useRef(null);
     const candlesRef = useRef([]); // local copy of history + live candles
+
+    const [EMAsettingsOpen, setEMAsettingsOpen] = useState(false);
+    const [volumeSettingsOpen, setVolumeSettingsOpen] = useState(false);
+    const [editingIndicator, setEditingIndicator] = useState(null);
+
+    const [loading, setLoading] = useState(false);
+
+
+    useEffect(() => { //sync ref with state
+        indicatorsRef.current = indicators;
+    }, [indicators]);
+
+    useChartIndicators(chartRef, seriesMapRef, indicators, candlesRef);
 
     // create chart once //////////////////////////////////////////////////////////
     useEffect(() => {
@@ -54,6 +71,7 @@ const Chart = ({selectedAsset, timeframe, panelOpen, indicators, onIndicatorsCha
             wickUpColor: "#26a69a",
             wickDownColor: "#ef5350",
         }, 0);
+
         priceSeriesRef.current = priceSeries;
 
         const resize = () => {
@@ -93,45 +111,51 @@ const Chart = ({selectedAsset, timeframe, panelOpen, indicators, onIndicatorsCha
 
         priceSeriesRef.current.update(candle);
 
-        // update active indicators
-        if (seriesMapRef.current.volume)
-            updateLastVolume(seriesMapRef.current.volume, candlesRef.current);
+        updateLiveIndicators(
+            seriesMapRef.current, 
+            indicatorsRef.current, 
+            candlesRef.current
+        );
     };
 
     // load history + open websocket when symbol/timeframe change //////////////////////////////
     useEffect(() => {
         if (!selectedAsset || !timeframe || !chartRef.current) return;
 
+        let isMounted = true;
+        Promise.resolve().then(() => {
+            if (isMounted) setLoading(true);
+        });
+
         const chart = chartRef.current;
+
         // Clear price & indicator data (safe even if seriesMap is empty)
         try { priceSeriesRef.current.setData([]); } catch (e) {console.log(e)}
         Object.values(seriesMapRef.current).forEach(s => {
             try { s.setData([]); } catch (e) {console.log(e)}
         });
 
-        let isMounted = true;
         fetch(`http://localhost:3001/history/${selectedAsset}/${timeframe}`)
         .then(r => r.json())
         .then(history => {
             if (!isMounted) return;
             candlesRef.current = history;
             priceSeriesRef.current.setData(history);
-            // update any existing indicators with history
-            if (seriesMapRef.current.volume) {
-                seriesMapRef.current.volume.setData(prepareVolumeData(history));
-            }
+            
+            setIndicatorsData(seriesMapRef.current, indicatorsRef.current, history);
+
             chart.timeScale().fitContent();
         })
         .catch(err => {
             console.error("History fetch error:", err);
+        })
+        .finally(() => {
+            if (isMounted) setLoading(false);
         });
 
         // Reset websocket
         wsRef.current = new WebSocket(`ws://localhost:3001?symbol=${selectedAsset}&timeframe=${timeframe}`);
-        wsRef.current.onmessage = (evt) => {
-            const msg = JSON.parse(evt.data);
-            handleRealtime(msg);
-        };
+        wsRef.current.onmessage = (evt) => handleRealtime(JSON.parse(evt.data));
         wsRef.current.onerror = (e) => console.warn("WS error", e);
         
         return () => {
@@ -143,58 +167,6 @@ const Chart = ({selectedAsset, timeframe, panelOpen, indicators, onIndicatorsCha
         };
 
     }, [selectedAsset, timeframe]);
-
-    const addVolumePane = () => {
-        const chart = chartRef.current;
-        if (!chart || seriesMapRef.current.volume) return;
-
-        const series = chart.addSeries(HistogramSeries, {
-            priceFormat: { type: "volume" },
-            //lastValueVisible: false,
-        }, 1);
-
-        seriesMapRef.current.volume = series;
-
-        series.setData(prepareVolumeData(candlesRef.current));
-
-        // Adjust pane heights
-        const candlePane = chart.panes()[0];
-        const volumePane = chart.panes()[1];
-        candlePane.setStretchFactor(0.8);
-        volumePane.setStretchFactor(0.2);
-
-        volumePane.priceScale("right").applyOptions({
-          autoScale: true,
-          ticksVisible: true,
-          scaleMargins: { top: 0, bottom: 0 },
-        });
-    };
-
-    const removeVolumePane = () => {
-        const chart = chartRef.current;
-        if (!chart || !seriesMapRef.current.volume) return;
-
-        chart.removeSeries(seriesMapRef.current.volume);
-        delete seriesMapRef.current.volume;
-
-        const p0 = chart.panes()[0];
-        if (p0) p0.setStretchFactor(1);
-    };
-
-    // ADD / REMOVE INDICATORS DYNAMICALLY
-    const syncIndicators = () => {
-        if (!chartRef.current) return;
-        // volume
-        if (indicators && indicators.includes("volume")) {
-            if (!seriesMapRef.current.volume) addVolumePane();
-        } else {
-            if (seriesMapRef.current.volume) removeVolumePane();
-        }
-    };
-
-    useEffect(() => {
-        syncIndicators();
-    }, [indicators]);
 
     // react to panelOpen (resize after layout shift)
     useEffect(() => {
@@ -210,36 +182,90 @@ const Chart = ({selectedAsset, timeframe, panelOpen, indicators, onIndicatorsCha
         return () => clearTimeout(t);
     }, [panelOpen]);
 
-    const onRemoveIndicator = (name) => {
-        if (onIndicatorsChange) {
-            onIndicatorsChange(indicators.filter(i => i !== name));
-        }
+    /// Indicators ////////////////////////////////////////////////////////////////////////
+    const openEMAsettings = (indicator) => {
+        setEditingIndicator(indicator);
+        setEMAsettingsOpen(true);
     };
 
+    const openVolumeSettings = () => setVolumeSettingsOpen(true);
+
+    const saveVolumeSettings = ({ upColor, downColor }) => {
+        onIndicatorsChange(prev => prev.map(ind =>
+            ind.id === "volume" ? { ...ind, upColor, downColor } : ind
+        ));
+    };
+
+    const saveEMAsettings = (updatedIndicator) => {
+        onIndicatorsChange(prev => prev.map(i =>
+            i === editingIndicator ? { ...i, ...updatedIndicator } : i
+        ));
+        setEMAsettingsOpen(false);
+        setEditingIndicator(null);
+    };
+
+    const onRemoveIndicator = (indicatorToRemove) => {
+        onIndicatorsChange(prev => prev.filter(i => i !== indicatorToRemove));
+    };
 
     return (
         <div className="relative w-full h-full">
 
             <div ref={chartContainer} className="chart-container w-full h-full">
 
+            {loading && <Spinner/>}
+
             {indicators.length > 0 && (
                 <div className="absolute top-2 left-0 text-white text-sm px-4 py-1 z-40">
-                    <span className="flex items-center gap-4 px-4 py-1 bg-black/30 shadow-md mb-1">Indicators : </span>
+                    <span className="flex items-center px-4 py-1 bg-black/30 shadow-md mb-1">Indicators : </span>
                     {indicators.map((ind, i) => (
-                        <div key={i} className="flex items-center gap-4 px-4 py-1 bg-black/30 shadow-md mb-1">
-                            <span>{ind.toUpperCase()}</span>
-                            <button onClick={() => onRemoveIndicator(ind)} className="text-white hover:text-(--red) cursor-pointer">
-                                <Settings className="w-4 h-4"/>
-                            </button>
-                            <button onClick={() => onRemoveIndicator(ind)} className="text-white hover:text-(--red) cursor-pointer">
-                                <X className="w-4 h-4"/>
-                            </button>
+                        <div key={i} className="flex items-center justify-between px-4 py-1 bg-black/30 shadow-md mb-1">
+                            <div className="flex gap-2 items-center">
+                                <span>{ind.id.toUpperCase()}{ind.length ? ind.length : ""}</span>
+                                {ind.color && (
+                                    <div className="w-3 h-3 rounded-sm border border-(--gray)"
+                                    style={{backgroundColor: ind.color}}/>
+                                )}
+                                </div>
+                            <div className="flex gap-2 items-center ml-8">
+                                {ind.id == "volume" && (
+                                    <button onClick={() => openVolumeSettings(ind)} className="text-white hover:text-(--red) cursor-pointer">
+                                        <Settings className="w-4 h-4"/>
+                                    </button>
+                                )}
+                                {ind.id == "ema" && (
+                                    <button onClick={() => openEMAsettings(ind)} className="text-white hover:text-(--red) cursor-pointer">
+                                        <Settings className="w-4 h-4"/>
+                                    </button>
+                                )}
+                                <button onClick={() => onRemoveIndicator(ind)} className="text-white hover:text-(--red) cursor-pointer">
+                                    <X className="w-4 h-4"/>
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>
             )}
 
             </div>
+
+            {EMAsettingsOpen && editingIndicator && editingIndicator.id === "ema" && (
+                <EMAsettings
+                open={EMAsettingsOpen}
+                onClose={() => { setEMAsettingsOpen(false); setEditingIndicator(null); }}
+                initial={editingIndicator}
+                onSave={saveEMAsettings}
+                />
+            )}
+
+            {volumeSettingsOpen && (
+                <VolumeSettings
+                open={volumeSettingsOpen}
+                onClose={() => setVolumeSettingsOpen(false)}
+                initial={indicators.find(i => i.id === "volume") || {}}
+                onSave={saveVolumeSettings}
+                />
+            )}
 
         </div>
     );

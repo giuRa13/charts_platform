@@ -1,21 +1,19 @@
 
-export function prepareVolumeData(candles) {
-  // candles: [{ time, open, high, low, close, volume }]
+export function prepareVolumeData(candles, upColor = "#26a69a", downColor = "#ef5350") {
   return candles.map(c => ({
     time: c.time,
     value: c.volume,
-    color: c.close >= c.open ? "#089981" : "#F23645" // green/red like Binance
+    color: c.close >= c.open ? upColor : downColor
   }));
 }
 
-export function updateLastVolume(volumeSeries, candles) {
+export function updateLastVolume(volumeSeries, candles, upColor, downColor) {
   if (!candles.length) return;
-
   const last = candles[candles.length - 1];
 
   volumeSeries.update({
     time: last.time,
     value: last.volume,
-    color: last.close >= last.open ? "#089981" : "#F23645"
+    color: last.close >= last.open ? upColor : downColor
   });
 }

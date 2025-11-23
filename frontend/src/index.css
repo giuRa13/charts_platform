@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: dark;
+
   --black: #171718;
   --gray: #303031;
   --b: #1e1e1e;
@@ -14,6 +16,29 @@ body {
   padding: 0;
   color: var(--accent);
   background-color: var(--b);
+}
+
+input[type=color] {
+    padding: 0;
+    border-radius: 4px;
+    overflow: hidden; /* forces swatch to follow border radius */
+    appearance: none;
+    -webkit-appearance: none;
+}
+/* Remove internal padding around the color box */
+input[type=color]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+/* Style the actual color box */
+input[type=color]::-webkit-color-swatch {
+    border: none;
+    border-radius: 0px; /* same rounding as outer input */
+}
+/* Firefox */
+input[type=color]::-moz-color-swatch {
+    border: none;
+    border-radius: 4px;
+    padding: 0;
 }
 
 
