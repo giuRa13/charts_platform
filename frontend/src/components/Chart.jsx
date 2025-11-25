@@ -2,12 +2,15 @@ import React, { useEffect, useRef, useState } from "react";
 import { CandlestickSeries, createChart, CrosshairMode, HistogramSeries, LineSeries } from "lightweight-charts";
 import { useChartIndicators, updateLiveIndicators, setIndicatorsData } from "../hooks/useChartIndicators";
 import { useChartSettings } from "../hooks/useChartSettings";
-import Spinner from "./Spinner";
+import { useDrawings } from "../hooks/useDrawings";
 import EMAsettings from "./modals/EMAsettings";
 import VolumeSettings from "./modals/VolumeSettings";
-import { X } from "lucide-react";
-import { Settings } from "lucide-react";
+import DrawingsSettings from "./modals/DrawingsSettings";
+import Spinner from "./Spinner";
 import Clock from "./Clock";
+import { Settings } from "lucide-react";
+import { Pencil, Square, MousePointer2, Trash2, ArrowRight, X } from "lucide-react";
+
 
 const Chart = ({
     selectedAsset, 
@@ -15,7 +18,7 @@ const Chart = ({
     panelOpen, 
     indicators = [], 
     onIndicatorsChange, 
-    chartSettings
+    chartSettings,
 }) => {
 
     const chartContainer = useRef();
@@ -34,6 +37,41 @@ const Chart = ({
 
     const [loading, setLoading] = useState(false);
 
+    // Drawings ////////////////////////////////////////////////////////////////////////////////
+    const [drawingSettingsOpen, setDrawingSettingsOpen] = useState(false);
+    const [editingObjectIndex, setEditingObjectIndex] = useState(null);
+    const [editingObjectData, setEditingObjectData] = useState(null);
+
+    // Callback when user double clicks a shape
+    const handleOpenObjectSettings = (index, objectData) => {
+        setEditingObjectIndex(index);
+        setEditingObjectData(objectData);
+        setDrawingSettingsOpen(true);
+    };
+
+    const { 
+        canvasRef, 
+        setDrawings,
+        currentTool, 
+        setCurrentTool,
+        renderDrawings,
+        updateDrawing,
+        removeDrawing,
+    } = useDrawings(chartRef, priceSeriesRef, chartContainer, handleOpenObjectSettings);
+
+    const handleSaveObjectSettings = (newSettings) => {
+        if (editingObjectIndex !== null) {
+            updateDrawing(editingObjectIndex, newSettings);
+        }
+    };
+
+    const handleDeleteObject = () => {
+        if (editingObjectIndex !== null) {
+            removeDrawing(editingObjectIndex);
+            setDrawingSettingsOpen(false);
+        }
+    };
+    /////////////////////////////////////////////////////////////////////////////////////////////
 
     useEffect(() => { //sync ref with state
         indicatorsRef.current = indicators;
@@ -201,6 +239,7 @@ const Chart = ({
         return () => clearTimeout(t);
     }, [panelOpen]);
 
+
     /// Indicators ////////////////////////////////////////////////////////////////////////
     const openEMAsettings = (indicator) => {
         setEditingIndicator(indicator);
@@ -226,6 +265,33 @@ const Chart = ({
     const onRemoveIndicator = (indicatorToRemove) => {
         onIndicatorsChange(prev => prev.filter(i => i !== indicatorToRemove));
     };
+
+
+    // HANDLE CANVAS RESIZE  (DRAWINGS) ////////////////////////////////////////////////////////
+    // The canvas must match the chart container size exactly
+    useEffect(() => {
+
+        const resizeCanvas = () => {
+            if (chartContainer.current && canvasRef.current) {
+                const { clientWidth, clientHeight } = chartContainer.current;
+                canvasRef.current.width = clientWidth;
+                canvasRef.current.height = clientHeight;
+                // Force a redraw after resize
+                renderDrawings();
+            }
+        };
+
+        window.addEventListener('resize', resizeCanvas);
+        // Initial sizing
+        const t = setTimeout(resizeCanvas, 100); 
+
+        return () => {
+            window.removeEventListener('resize', resizeCanvas);
+            clearTimeout(t);
+        };
+
+    }, [panelOpen]);
+
 
     return (
         <div className="relative w-full h-full">
@@ -266,7 +332,46 @@ const Chart = ({
                     ))}
                 </div>
             )}
+                <canvas
+                ref={canvasRef}
+                className="absolute top-0 left-0 z-20"
+                /*style={{ pointerEvents: currentTool ? 'auto' : 'none' }} */
+                /*onMouseDown={interactionHandlers.onMouseDown}*/
+                />
             </div>
+
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-40 flex gap-2 bg-[#1e1e1e] border border-gray-700 p-1 rounded-sm shadow-lg items-center">
+                <button onClick={() => setCurrentTool(null)}
+                className={`p-2 rounded hover:bg-(--redT) ${!currentTool ? 'text-(--red) bg-gray-800' : 'text-gray-400'}`}>
+                    <MousePointer2 size={18} />
+                </button>
+                <button onClick={() => setCurrentTool('line')}
+                className={`p-2 rounded hover:bg-(--redT) ${currentTool === 'line' ? 'text-(--red) bg-gray-800' : 'text-gray-400'}`}>
+                    <Pencil size={18} />
+                </button>
+                <button onClick={() => setCurrentTool('ray')}
+                    className={`p-2 rounded hover:bg-(--redT) ${currentTool === 'ray' ? 'text-blue-500 bg-gray-800' : 'text-gray-400'}`}
+                    title="Ray">
+                    <ArrowRight size={18} />
+                </button>
+                <button onClick={() => setCurrentTool('rect')}
+                className={`p-2 rounded hover:bg-gray-700 ${currentTool === 'rect' ? 'text-blue-500 bg-gray-800' : 'text-gray-400'}`}>
+                    <Square size={18} />
+                </button>
+                 <div className="w-px h-6 bg-gray-600 mx-1"></div>
+                <button onClick={() => { setDrawings([]); requestAnimationFrame(renderDrawings); }}
+                className="p-2 rounded hover:bg-red-900/50 text-red-400">
+                    <Trash2 size={18} />
+                </button>            
+            </div>
+
+            <DrawingsSettings
+                open={drawingSettingsOpen}
+                onClose={() => setDrawingSettingsOpen(false)}
+                currentObject={editingObjectData}
+                onSave={handleSaveObjectSettings}
+                onDelete={handleDeleteObject}
+            />
 
             {EMAsettingsOpen && editingIndicator && editingIndicator.id === "ema" && (
                 <EMAsettings
@@ -283,6 +388,7 @@ const Chart = ({
                 onClose={() => setVolumeSettingsOpen(false)}
                 initial={indicators.find(i => i.id === "volume") || {}}
                 onSave={saveVolumeSettings}
+                onDelete={handleDeleteObject}
                 />
             )}
 

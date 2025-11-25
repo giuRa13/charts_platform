@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
 
 const DEFAULTS = {
-    backgroundColor: "#1e1e1e",
+    backgroundColor: "#1a1a1aff",//"#1e1e1e",
     textColor: "#DCEDE3",
     gridColor: "#535151",
     candleUp: "#26a69a",

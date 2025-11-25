@@ -4,13 +4,22 @@
   color-scheme: dark;
 
   --black: #171718;
-  --gray: #303031;
+  /*--gray: #303031;*/
   --grayB: #474748;
-  --b: #1e1e1e;
+  /*--b: #1e1e1e;*/
 
-  --red: #d83160;
-  --redT: #d831606f;
+  --gray: #1A1A1Aff;
+  --b: #1A1A1Aff;
+  --red:  #00a8c2;
+
+  /*--red: #d83160;*/
+  /*--redT: #d831606f;*/
+  --redT: #00a8c2;
   --accent: #00a8c2;
+
+  --carbon-black: #1A1A1Aff;
+  --dark-gray: #262726ff;
+  --gunmetal: #3A3B3Bff;
 }
 
 body {

@@ -21,7 +21,7 @@ function App() {
 
   const [showChartSettings, setShowChartSettings] = useState(false);
   const [chartConfig, setChartConfig] = useState({
-      backgroundColor: "#1e1e1e",
+      backgroundColor: "#1A1A1Aff",//"#1e1e1e",
       textColor: "#DCEDE3",
       gridColor: "#303030",
       gridVertVisible: true,
