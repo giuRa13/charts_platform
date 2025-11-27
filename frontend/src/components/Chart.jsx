@@ -8,8 +8,9 @@ import VolumeSettings from "./modals/VolumeSettings";
 import DrawingsSettings from "./modals/DrawingsSettings";
 import Spinner from "./Spinner";
 import Clock from "./Clock";
-import { Settings } from "lucide-react";
+import { GripVertical, Settings } from "lucide-react";
 import { Pencil, Square, MousePointer2, Trash2, ArrowRight, X } from "lucide-react";
+import useDraggable from "../hooks/useDraggable";
 
 
 const Chart = ({
@@ -36,6 +37,7 @@ const Chart = ({
     const [editingIndicator, setEditingIndicator] = useState(null);
 
     const [loading, setLoading] = useState(false);
+    
 
     // Drawings ////////////////////////////////////////////////////////////////////////////////
     const [drawingSettingsOpen, setDrawingSettingsOpen] = useState(false);
@@ -81,6 +83,10 @@ const Chart = ({
 
     useChartSettings(chartRef, priceSeriesRef, chartSettings);
 
+    const toolbarRef = useRef(null);
+    const toolbarHandleRef = useRef(null);
+    useDraggable(toolbarHandleRef, toolbarRef);
+
     // create chart once //////////////////////////////////////////////////////////
     useEffect(() => {
         const container = chartContainer.current;
@@ -91,8 +97,8 @@ const Chart = ({
                 textColor: chartSettings.textColor,
                 background: { type: "solid", color: chartSettings.backgroundColor },
                 panes: {
-                    separatorColor: "#DCEDE3", // "#d83160",
-                    separatorHoverColor: 'rgba(216, 46, 96, 0.1)',
+                    separatorColor: "#C7C3C5", // "#d83160",
+                    separatorHoverColor: 'rgba(0, 168, 194, 0.1)',
                     enableResize: true,
             }},
             grid: { 
@@ -303,9 +309,11 @@ const Chart = ({
             )}
             {indicators.length > 0 && (
                 <div className="absolute top-2 left-0 text-white text-sm px-4 py-1 z-40">
-                    <span className="flex items-center px-4 py-1 bg-black/30 shadow-md mb-1">Indicators : </span>
+                <span className="flex items-center px-4 py-1 bg-black/20 shadow-md rounded-sm border border-(--graphite) mb-1">
+                    Indicators : 
+                </span>
                     {indicators.map((ind, i) => (
-                        <div key={i} className="flex items-center justify-between px-4 py-1 bg-black/30 shadow-md mb-1">
+                        <div key={i} className="flex items-center justify-between px-4 py-1 bg-(--black)/20 rounded-sm border border-(--graphite) shadow-md mb-1">
                             <div className="flex gap-2 items-center">
                                 <span>{ind.id.toUpperCase()}{ind.length ? ind.length : ""}</span>
                                 {ind.color && (
@@ -340,38 +348,44 @@ const Chart = ({
                 />
             </div>
 
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-40 flex gap-2 bg-[#1e1e1e] border border-gray-700 p-1 rounded-sm shadow-lg items-center">
+            <div ref={toolbarRef} className="fixed top-20 left-1/2 transform -translate-x-1/2 z-45 flex gap-2 bg-(--gray) border-3 border-(--graphite) p-1 rounded-sm shadow-lg items-center">
+                <div ref={toolbarHandleRef} className="ml-2 cursor-grab active:cursor-grabbing">
+                    <GripVertical size={18}/>
+                </div>
+                <div className="w-px h-6 bg-gray-600 mx-1"></div>
                 <button onClick={() => setCurrentTool(null)}
-                className={`p-2 rounded hover:bg-(--redT) ${!currentTool ? 'text-(--red) bg-gray-800' : 'text-gray-400'}`}>
+                className={`p-2 rounded hover:bg-(--primary)/40 ${!currentTool ? 'bg-(--primary)' : ''}`}>
                     <MousePointer2 size={18} />
                 </button>
                 <button onClick={() => setCurrentTool('line')}
-                className={`p-2 rounded hover:bg-(--redT) ${currentTool === 'line' ? 'text-(--red) bg-gray-800' : 'text-gray-400'}`}>
+                className={`p-2 rounded hover:bg-(--primary)/40 ${currentTool === 'line' ? 'bg-(--primary)' : ''}`}>
                     <Pencil size={18} />
                 </button>
                 <button onClick={() => setCurrentTool('ray')}
-                    className={`p-2 rounded hover:bg-(--redT) ${currentTool === 'ray' ? 'text-blue-500 bg-gray-800' : 'text-gray-400'}`}
-                    title="Ray">
+                    className={`p-2 rounded hover:bg-(--primary)/40 ${currentTool === 'ray' ?'bg-(--primary)' : ''}`}>
                     <ArrowRight size={18} />
                 </button>
                 <button onClick={() => setCurrentTool('rect')}
-                className={`p-2 rounded hover:bg-gray-700 ${currentTool === 'rect' ? 'text-blue-500 bg-gray-800' : 'text-gray-400'}`}>
+                className={`p-2 rounded hover:bg-gray-700 ${currentTool === 'rect' ? 'bg-(--primary)' : ''}`}>
                     <Square size={18} />
                 </button>
                  <div className="w-px h-6 bg-gray-600 mx-1"></div>
                 <button onClick={() => { setDrawings([]); requestAnimationFrame(renderDrawings); }}
-                className="p-2 rounded hover:bg-red-900/50 text-red-400">
+                className="p-2 rounded hover:bg-(--red)/40 hover:text-(--red)">
                     <Trash2 size={18} />
                 </button>            
             </div>
 
-            <DrawingsSettings
-                open={drawingSettingsOpen}
-                onClose={() => setDrawingSettingsOpen(false)}
-                currentObject={editingObjectData}
-                onSave={handleSaveObjectSettings}
-                onDelete={handleDeleteObject}
-            />
+            {drawingSettingsOpen && ( 
+            // conditional check so they re-mount when opened (for useDraggable refs)
+                <DrawingsSettings
+                    open={drawingSettingsOpen}
+                    onClose={() => setDrawingSettingsOpen(false)}
+                    currentObject={editingObjectData}
+                    onSave={handleSaveObjectSettings}
+                    onDelete={handleDeleteObject}
+                />
+            )}
 
             {EMAsettingsOpen && editingIndicator && editingIndicator.id === "ema" && (
                 <EMAsettings

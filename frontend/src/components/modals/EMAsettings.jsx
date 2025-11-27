@@ -17,7 +17,7 @@ const EMAsettings = ({
 
     React.useEffect(() => {
         setLength(safeInitial.length || 20);
-        setColor(safeInitial.color || "#f1c40f");
+        setColor(safeInitial.color || "#c8b914");
         setLineWidth(safeInitial.lineWidth || 2);
     }, [safeInitial]);
 
@@ -32,19 +32,19 @@ const EMAsettings = ({
         <div className='flex flex-col gap-2 px-4'>
             
             <div className='flex items-center justify-between'>
-                <label className='text-(--red) text-md'>Length</label>
+                <label className='text-(--text) text-md'>Length</label>
                 <input
                     type='number'
                     min={1}
                     step={1}
                     value={length}
                     onChange={(e) => setLength(Number(e.target.value))}
-                    className='w-[25%] bg-(--gray) text-white px-2 py-1 border border-(--red) outline-none'
+                    className='w-[25%] bg-(--gray) text-white px-2 py-1 border border-(--primary) outline-none'
                 />
             </div>
 
             <div className='flex items-center justify-between'>
-                <label className='text-(--red) text-md'>Line Width</label>
+                <label className='text-(--text) text-md'>Line Width</label>
                 <input
                     type='number'
                     min={1}
@@ -52,23 +52,23 @@ const EMAsettings = ({
                     max={6}
                     value={lineWidth}
                     onChange={(e) => setLineWidth(Number(e.target.value))}
-                    className='w-[25%] bg-(--gray) text-white px-2 py-1 border border-(--red) outline-none'
+                    className='w-[25%] bg-(--gray) text-white px-2 py-1 border border-(--primary) outline-none'
                 />
             </div>
 
             <div className='flex items-center justify-between'>
-                <label className='text-(--red) text-md'>Color</label>
+                <label className='text-(--text) text-md'>Color</label>
                 <input
                     type='color'
                     value={color}
                     onChange={(e) => setColor(e.target.value)}
-                    className='h-10 w-10 cursor-pointer rounded-md border-4 border-(--gray) hover:border-(--red)'
+                    className='h-10 w-10 cursor-pointer rounded-md border-4 border-(--graphite) hover:border-(--primary)'
                 />
             </div>
 
             <div className="flex justify-end gap-2 mt-4 ">
-                <button onClick={onClose} className="px-3 py-0.5 rounded-sm bg-gray-700 text-white hover:opacity-80 cursor-pointer">Cancel</button>
-                <button onClick={handleSave} className="px-3 py-0.5 rounded-sm bg-(--red) hover:opacity-80 cursor-pointer">Save</button>
+                <button onClick={onClose} className="px-3 py-0.5 rounded-sm bg-(--red) hover:opacity-80 cursor-pointer">Cancel</button>
+                <button onClick={handleSave} className="px-3 py-0.5 rounded-sm bg-(--primary) hover:opacity-80 cursor-pointer">Save</button>
             </div>
         
         </div>

@@ -1,4 +1,6 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
+import useDraggable from "../hooks/useDraggable";
+import { GripVertical } from "lucide-react";
 
 const Clock = ({color}) => {
 
@@ -16,11 +18,24 @@ const Clock = ({color}) => {
         second: "2-digit" 
     });
 
+    const clockRef = useRef(null);
+    const clockHandleRef = useRef(null);
+    useDraggable(clockHandleRef, clockRef);
+
+
     return (
-        <div className="absolute top-2 right-22 z-40 font-mono text-lg font-bold select-none pointer-events-none px-4 py-1 bg-black/30 shadow-md"
+                   
+        <div ref={clockRef} className="fixed top-20 right-42 z-40 flex items-center font-mono text-lg font-bold select-none pointer-events-auto 
+        px-4 py-2 bg-(--black)/20 rounded-sm border-2 border-(--graphite) shadow-md"
         style={{ color: color }}
         >
-            {timeString}
+            <div ref={clockHandleRef} className="cursor-grab active:cursor-grabbing text-(--text)/60 hover:text-(--text)">
+                <GripVertical size={18}/>     
+            </div>
+            <div className="w-px h-6 bg-(--graphite) mx-2"></div>
+            <div className=" ml-2">
+                {timeString}
+            </div>
         </div>
     );
 };

@@ -32,7 +32,7 @@ const SearchBar = ({assets, onSelectAsset}) => {
 
         return parts.map((part, i) =>
             regex.test(part) ? (
-                <span key={i} className="text-(--accent) font-bold">
+                <span key={i} className="text-(--red) font-bold">
                     {part}
                 </span>
             ) : (
@@ -45,10 +45,10 @@ const SearchBar = ({assets, onSelectAsset}) => {
         <div ref={containerRef} className="relative w-full">
    
             <div onClick={() => setOpen(true)} 
-            className="flex items-center border border-(--red) bg-(--gray) px-3 py-2 text-(--red)">
-                <Search className="w-5 h-5" />
+            className="flex items-center border-3 border-(--graphite) bg-(--gray) text-(--text) rounded-sm px-3 py-2">
+                <Search className="w-5 h-5"/>
                 <input
-                className="ml-3 bg-transparent w-full outline-none text-(--red)"
+                className="ml-3 bg-transparent w-full outline-none"
                 placeholder="Search"
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); setOpen(true);}}
@@ -56,7 +56,7 @@ const SearchBar = ({assets, onSelectAsset}) => {
             </div>
 
             {showList && (
-            <div className="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-(--gray) text-(--red) border border-(--red) z-50">
+            <div className="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-(--gray) text-(--text) border-3 border-(--graphite) z-50">
                 {filtered.map(asset => (
                     <div
                     key={asset.symbol}
@@ -65,7 +65,7 @@ const SearchBar = ({assets, onSelectAsset}) => {
                         setQuery("");
                         setOpen(false);
                     }}
-                    className="px-3 py-2 cursor-pointer hover:bg-(--red) hover:text-black"
+                    className="px-3 py-2 cursor-pointer hover:bg-(--primary) hover:text-black"
                     >
                         {highlightmatch(asset.symbol, query)}
                     </div>

@@ -8,8 +8,8 @@ const VolumeSettings = ({
     onSave 
 }) => {
 
-    const defaultUp = "#26a69a";
-    const defaultDown = "#ef5350";
+    const defaultUp = "#008080";
+    const defaultDown = "#F33644";
     const [upColor, setUpColor] = useState(initial.upColor || defaultUp);
     const [downColor, setDownColor] = useState(initial.downColor || defaultDown);
 
@@ -33,30 +33,28 @@ const VolumeSettings = ({
       <div className="flex flex-col gap-2 px-4">
 
         <div className='flex items-center justify-between'>
-            <label className='text-(--red) text-md'>Up Color</label>
+            <label className='text-md'>Up Color</label>
             <input
                 type='color'
                 value={upColor}
                 onChange={(e) => setUpColor(e.target.value)}
-                className='h-10 w-10 cursor-pointer rounded-md border-4 border-(--gray) hover:border-(--red)'
+                className='h-10 w-10 cursor-pointer rounded-md border-4 border-(--graphite) hover:border-(--primary)'
             />
         </div>
  
         <div className='flex items-center justify-between'>
-            <label className='text-(--red) text-md'>Down Color</label>
+            <label className='text-md'>Down Color</label>
             <input
                 type='color'
                 value={downColor}
                 onChange={(e) => setDownColor(e.target.value)}
-                className='h-10 w-10 cursor-pointer rounded-md border-4 border-(--gray) hover:border-(--red)'
+                className='h-10 w-10 cursor-pointer rounded-md border-4 border-(--graphite) hover:border-(--primary)'
             />
         </div>
 
-        <div className="flex justify-end mt-2">
-            <button onClick={resetDefaults} className="px-3 py-0.5 rounded-sm bg-gray-700 text-white cursor-pointer">Default</button>
-        </div>
-        <div className="flex justify-end mt-4">
-          <button onClick={handleSave} className="px-3 py-0.5 rounded-sm bg-(--red) w-[50%] text-white cursor-pointer">Save</button>
+        <div className="flex justify-between gap-2 mt-4">
+            <button onClick={resetDefaults} className="px-3 py-0.5 w-full rounded-sm bg-(--primary) hover:opacity-80 cursor-pointer">Default</button>
+          <button onClick={handleSave} className="px-3 py-0.5 w-full rounded-sm bg-(--primary) hover:opacity-80 w-[50%] cursor-pointer">Save</button>
         </div>
 
       </div>

@@ -13,9 +13,9 @@ const TimeframeBtns = ({ timeframe, onSelectTimeframe }) => {
                 <button
                 key={tf.value}
                 onClick={() => onSelectTimeframe(tf.value)}
-                className={`px-4 py-1 border border-(--red) cursor-pointer
-                    ${timeframe === tf.value ? "bg-(--red) text-black" : "bg-(--gray) text-(--red)"}
-                    hover:opacity-70`}
+                className={`px-3 py-0 border-3 border-(--graphite) cursor-pointer rounded-sm
+                    ${timeframe === tf.value ? "bg-gray-700 text-(--text)" : "bg-transparent text-(--text)"}
+                    hover:bg-(--primary)/40`}
                 >
                 {tf.label}
                 </button>

@@ -2,8 +2,8 @@ import React from 'react';
 import Modal from "./Modal";
 
 const Indicators = [
-    { id: "volume", label: "Volume", upColor: "#26a69a", downColor: "#ef5350" },
-    { id: "ema", label: "EMA", length: 20, color: "#ff772e", lineWidth: 2 },
+    { id: "volume", label: "Volume", upColor: "#2c99c0", downColor: "#be292d" },
+    { id: "ema", label: "EMA", length: 20, color: "#c8b914", lineWidth: 2 },
     { id: "cvd", label: "CVD" },
     { id: "rsi", label: "RSI" },
 ];
@@ -15,7 +15,7 @@ const IndicatorsModal = ({ open, onClose, onSelect }) => {
             {Indicators.map(ind => (
                 <button key={ind.id}
                 onClick={() => { onSelect(ind.id); onClose(); }}
-                className='w-full text-left px-3 py-2 bg-white/5 hover:bg-(--red) text-(--red) hover:text-black'
+                className='w-full text-left px-3 py-2 bg-white/5 hover:bg-(--primary) text-(--text) hover:text-(--black)'
                 >
                     {ind.label}
                 </button>

@@ -21,13 +21,13 @@ function App() {
 
   const [showChartSettings, setShowChartSettings] = useState(false);
   const [chartConfig, setChartConfig] = useState({
-      backgroundColor: "#1A1A1Aff",//"#1e1e1e",
+      backgroundColor: "#161616", /*"#131419",*/ /*"#000101",*///"#1e1e1e",
       textColor: "#DCEDE3",
       gridColor: "#303030",
-      gridVertVisible: true,
+      gridVertVisible: false,
       gridHorzVisible: false,
-      candleUpColor: "#26a69a",
-      candleDownColor: "#ef5350",
+      candleUpColor: "#2c99c0", //"#008080",//"#088F79", 
+      candleDownColor: "#be292d", // "#F33644", 
       magnetMode: false,
       showClock: false,
       clockColor: "#DCEDE3",
@@ -44,7 +44,7 @@ function App() {
 
       if (indicatorId === "volume") {
         if (prev.find(ind => ind.id === "volume")) return prev;
-        return [...prev, { id: "volume" , upColor: "#26a69a", downColor: "#ef5350" }];
+        return [...prev, { id: "volume" , upColor: "#2c99c0", downColor: "#be292d" }];
       }
 
       if (indicatorId === "ema") {
@@ -55,7 +55,7 @@ function App() {
             {
                 id: "ema",
                 length: 20,       
-                color: "#ff772e" 
+                color: "#c8b914" 
             }
         ];
     }
@@ -77,20 +77,26 @@ function App() {
   }, []);
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-(--gray) text-(--b)">
+    <div className="w-screen h-screen flex flex-col bg-(--gray) text-(--text)">
 
-      <ChartSettings
-        open={showChartSettings}
-        onClose={() => setShowChartSettings(false)}
-        currentSettings={chartConfig}
-        onSave={setChartConfig}
-      />
-      
-      <IndicatorsModal
-        open={showIndicators}
-        onClose={() => setShowIndicators(false)}
-        onSelect={handleAddIndicator}
-      />
+      {showChartSettings && ( 
+        // conditional check so they re-mount when opened (for useDraggable refs)
+        <ChartSettings
+          open={showChartSettings}
+          onClose={() => setShowChartSettings(false)}
+          currentSettings={chartConfig}
+          onSave={setChartConfig}
+        />
+      )}
+
+      {showIndicators && ( 
+        // conditional check so they re-mount when opened (for useDraggable refs)
+        <IndicatorsModal
+          open={showIndicators}
+          onClose={() => setShowIndicators(false)}
+          onSelect={handleAddIndicator}
+        />
+      )}
 
       <TopBar
         assets={assetsList}
@@ -130,12 +136,12 @@ function App() {
         )}
 
       {/* Right sidebar */}
-      <div className="flex-shrink-0 w-18 bg-(--gray) flex flex-col p-2 border-l border-(--red)">
-        <button className="mb-2 px-2 py-2 bg-(--red) flex items-center justify-center cursor-pointer hover:opacity-70"
+      <div className="flex-shrink-0 w-18 bg-(--gray) flex flex-col p-2 border-l-4 border-(--graphite)">
+        <button className="mb-2 px-2 py-2 bg-(--primary) rounded-sm flex items-center justify-center cursor-pointer hover:opacity-70"
         onClick={() => setIsPanelOpen(p => !p)}>
           <Menu className="w-6 h-6"/>
         </button>
-        <button className="mb-2 px-2 py-2 bg-(--red) flex items-center justify-center cursor-pointer hover:opacity-70"
+        <button className="mb-2 px-2 py-2 bg-(--primary) rounded-sm flex items-center justify-center cursor-pointer hover:opacity-70"
         onClick={() => setShowChartSettings(true)}>
           <Settings className="w-6 h-6"/>
         </button>

@@ -3,23 +3,32 @@
 :root {
   color-scheme: dark;
 
-  --black: #171718;
-  /*--gray: #303031;*/
-  --grayB: #474748;
-  /*--b: #1e1e1e;*/
+  --black: #000101;
+  --text: #C7C3C5;
+  --gray: #262626; /*#1e1e1e;*/ /*#262626;*/ /*#191A1F;*/
+  /*#314158 gray-700 button*/
+  --primary: #314158; /*#22735d;*/ /*#d83160;*/
+  --primaryT: #31415851;
 
-  --gray: #1A1A1Aff;
-  --b: #1A1A1Aff;
-  --red:  #00a8c2;
-
-  /*--red: #d83160;*/
-  /*--redT: #d831606f;*/
-  --redT: #00a8c2;
   --accent: #00a8c2;
+  --accentT: #00a8c26b;
+  --red:#d83160;
+  --redT: #d8316070;
+  --graphite: #2E2F2F;/*gray text gray muted*/
 
-  --carbon-black: #1A1A1Aff;
-  --dark-gray: #262726ff;
-  --gunmetal: #3A3B3Bff;
+  --teal: #008080;
+  --crimson: #DC143C;
+  --classic-crimson-2: #DC183Eff;
+
+  --up: #088F79;
+  --down: #F33644;
+
+  --blue-green: #2c99c0;
+  --flag-red: #be292d;
+  --dim-grey: #626365ff;
+  --chart: #161616;
+  --chart1: #121418;
+  --chart2: #131419;
 }
 
 body {
@@ -60,9 +69,9 @@ input[type="checkbox"] {
   justify-content: center;
   font-size: 2rem;
   padding: 0.1rem;
-  border: 0.20rem solid var(--gray);
+  border: 0.20rem solid var(--graphite);
   border-radius: 0.5rem;
-  background-color: var(--b);
+  background-color: var(--primary);
 }
 input[type="checkbox"]::before {
   content: "";
@@ -73,21 +82,21 @@ input[type="checkbox"]::before {
 }
 input[type="checkbox"]:checked::before {
   transform: scale(1);
-  background-color: var(--b);
+  background-color: var(--black);
 }
 input[type="checkbox"]:checked{
-  background-color: var(--red);
+  background-color: var(--primary);
 }
 input[type="checkbox"]:hover {
-  background-color: var(--red);
-  border: 0.20rem solid var(--grayB);
+  background-color: var(--primary);
+  border: 0.20rem solid var(--black);
 }
 
 
 /* Apply to all scrollable elements */
 * {
   scrollbar-width: thin; /* Firefox */
-  scrollbar-color: #d83160 #1e1e1e; /* thumb color | track color */
+  scrollbar-color: var(--primary) #1e1e1e; /* thumb color | track color */
 }
 /* Webkit browsers (Chrome, Edge, Safari) */
 *::-webkit-scrollbar {

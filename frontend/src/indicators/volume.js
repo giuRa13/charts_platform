@@ -1,5 +1,5 @@
 
-export function prepareVolumeData(candles, upColor = "#26a69a", downColor = "#ef5350") {
+export function prepareVolumeData(candles, upColor = "#008080", downColor = "#F33644") {
   return candles.map(c => ({
     time: c.time,
     value: c.volume,

@@ -36,8 +36,8 @@ export const useChartIndicators = (
             seriesMapRef.current.volume.setData(
                 prepareVolumeData(
                     candlesRef.current,
-                    volumeIndicator.upColor || "#26a69a",
-                    volumeIndicator.downColor || "#ef5350"
+                    volumeIndicator.upColor || "#2c99c0", 
+                    volumeIndicator.downColor || "#be292d" 
                 )
             );
         } else {
@@ -91,8 +91,8 @@ export const updateLiveIndicators = (seriesMap, indicators, candles) => {
         updateLastVolume(
             seriesMap.volume,
             candles,
-            volConfig?.upColor || "#26a69a",
-            volConfig?.downColor || "#ef5350"
+            volConfig?.upColor || "#2c99c0",
+            volConfig?.downColor || "#be292d" 
         );
     }
 
@@ -113,8 +113,8 @@ export const setIndicatorsData = (seriesMap, indicators, history) => {
         seriesMap.volume.setData(
             prepareVolumeData(
                 history,
-                volumeIndicator?.upColor || "#26a69a",
-                volumeIndicator?.downColor || "#ef5350"
+                volumeIndicator?.upColor || "#2c99c0",
+                volumeIndicator?.downColor || "#be292d" 
             )
         );
     }
