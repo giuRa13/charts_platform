@@ -20,6 +20,7 @@ const Chart = ({
     indicators = [], 
     onIndicatorsChange, 
     chartSettings,
+    onOpenTPOSettings,
 }) => {
 
     const chartContainer = useRef();
@@ -86,6 +87,27 @@ const Chart = ({
     const toolbarRef = useRef(null);
     const toolbarHandleRef = useRef(null);
     useDraggable(toolbarHandleRef, toolbarRef);
+
+    const parseSymbol = (symbol) => {
+        if (!symbol) return { base: "", quote: "" };
+        
+        const knownQuotes = ["USDT", "USDC", "BUSD", "TUSD", "USD", "EUR", "BTC", "ETH", "BNB"];
+        
+        for (const quote of knownQuotes) {
+            if (symbol.endsWith(quote)) {
+                return {
+                    base: symbol.slice(0, -quote.length),
+                    quote: quote
+                };
+            }
+        }
+        
+        // Fallback if unknown quote (e.g. for some unique pairs)
+        return { base: symbol, quote: "" };
+    };
+
+    const { base, quote } = parseSymbol(selectedAsset);
+    const logoUrl = base ? `https://assets.coincap.io/assets/icons/${base.toLowerCase()}@2x.png` : "";
 
     // create chart once //////////////////////////////////////////////////////////
     useEffect(() => {
@@ -207,6 +229,10 @@ const Chart = ({
             
             setIndicatorsData(seriesMapRef.current, indicatorsRef.current, history);
 
+            chart.priceScale('right').applyOptions({
+                autoScale: true, // Unlock if user dragged it
+            });
+
             chart.timeScale().fitContent();
         })
         .catch(err => {
@@ -307,11 +333,32 @@ const Chart = ({
             {chartSettings.showClock && (
                 <Clock color={chartSettings.clockColor}/>
             )}
-            {indicators.length > 0 && (
-                <div className="absolute top-2 left-0 text-white text-sm px-4 py-1 z-40">
-                <span className="flex items-center px-4 py-1 bg-black/20 shadow-md rounded-sm border border-(--graphite) mb-1">
+            {/* 1. ASSET INFO BADGE */}
+                <div className="absolute top-2 left-4 z-45 flex items-center gap-2 px-3 py-2 bg-(--black)/20 border border-(--graphite) rounded-sm shadow-md">
+                    {logoUrl ? (
+                        <img 
+                            src={logoUrl} 
+                            alt={base} 
+                            className="w-5 h-5 rounded-full"
+                            onError={ (e) => {
+                                e.target.style.display = 'none';
+                                e.target.parentElement.innerText = base[0]; // Fallback to letter
+                            }}
+                        />
+                    ): (
+                        <span className="text-xs font-bold text-gray-400">{base ? base[0] : "?"}</span>
+                    )}    
+                    <div className="flex items-center gap-2 font-semibold leading-none">
+                        <span>{base} / {quote}</span>
+                        <span className="text-[10px] text-white bg-(--red) p-1 mx-2 rounded-sm">{timeframe}</span>
+                    </div>
+                    <span className="text-xs font-mono">BINANCE • SPOT</span>
+                </div>
+                {indicators.length > 0 && (
+                <div className="absolute top-12 left-0 text-sm px-4 py-1 z-40">
+                {/*<span className="flex items-center px-4 py-1 bg-(--black)/20 shadow-md rounded-sm border border-(--graphite) mb-1">
                     Indicators : 
-                </span>
+                </span>*/}
                     {indicators.map((ind, i) => (
                         <div key={i} className="flex items-center justify-between px-4 py-1 bg-(--black)/20 rounded-sm border border-(--graphite) shadow-md mb-1">
                             <div className="flex gap-2 items-center">
@@ -323,23 +370,28 @@ const Chart = ({
                                 </div>
                             <div className="flex gap-2 items-center ml-8">
                                 {ind.id == "volume" && (
-                                    <button onClick={() => openVolumeSettings(ind)} className="text-white hover:text-(--red) cursor-pointer">
+                                    <button onClick={() => openVolumeSettings(ind)} className="hover:text-(--red) cursor-pointer">
                                         <Settings className="w-4 h-4"/>
                                     </button>
                                 )}
                                 {ind.id == "ema" && (
-                                    <button onClick={() => openEMAsettings(ind)} className="text-white hover:text-(--red) cursor-pointer">
+                                    <button onClick={() => openEMAsettings(ind)} className="hover:text-(--red) cursor-pointer">
                                         <Settings className="w-4 h-4"/>
                                     </button>
                                 )}
-                                <button onClick={() => onRemoveIndicator(ind)} className="text-white hover:text-(--red) cursor-pointer">
+                                {ind.id == "tpo" && (
+                                    <button onClick={() => onOpenTPOSettings(ind)} className="hover:text-(--red) cursor-pointer">
+                                        <Settings className="w-4 h-4"/>
+                                    </button>
+                                )}
+                                <button onClick={() => onRemoveIndicator(ind)} className="hover:text-(--red) cursor-pointer">
                                     <X className="w-4 h-4"/>
                                 </button>
                             </div>
                         </div>
                     ))}
                 </div>
-            )}
+                )}
                 <canvas
                 ref={canvasRef}
                 className="absolute top-0 left-0 z-20"

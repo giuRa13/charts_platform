@@ -39,7 +39,7 @@ const EMAsettings = ({
                     step={1}
                     value={length}
                     onChange={(e) => setLength(Number(e.target.value))}
-                    className='w-[25%] bg-(--gray) text-white px-2 py-1 border border-(--primary) outline-none'
+                    className='w-20 bg-[#161616] text-white px-2 py-1 border border-(--primary) outline-none text-right'
                 />
             </div>
 
@@ -52,7 +52,7 @@ const EMAsettings = ({
                     max={6}
                     value={lineWidth}
                     onChange={(e) => setLineWidth(Number(e.target.value))}
-                    className='w-[25%] bg-(--gray) text-white px-2 py-1 border border-(--primary) outline-none'
+                    className='w-20 bg-[#161616] text-white px-2 py-1 border border-(--primary) outline-none text-right'
                 />
             </div>
 
@@ -66,7 +66,7 @@ const EMAsettings = ({
                 />
             </div>
 
-            <div className="flex justify-end gap-2 mt-4 ">
+            <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-(--primary)">
                 <button onClick={onClose} className="px-3 py-0.5 rounded-sm bg-(--red) hover:opacity-80 cursor-pointer">Cancel</button>
                 <button onClick={handleSave} className="px-3 py-0.5 rounded-sm bg-(--primary) hover:opacity-80 cursor-pointer">Save</button>
             </div>

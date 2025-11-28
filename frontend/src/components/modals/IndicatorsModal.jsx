@@ -6,6 +6,7 @@ const Indicators = [
     { id: "ema", label: "EMA", length: 20, color: "#c8b914", lineWidth: 2 },
     { id: "cvd", label: "CVD" },
     { id: "rsi", label: "RSI" },
+    { id: "tpo", label: "TPO (Market Profile)", color: "rgba(41, 98, 255, 0.6)", blockSize: 10 },
 ];
 
 const IndicatorsModal = ({ open, onClose, onSelect }) => {

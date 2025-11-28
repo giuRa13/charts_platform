@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import IndicatorsModal from "./components/modals/IndicatorsModal";
 import ChartSettings from "./components/modals/ChartSettings";
+import TPOsSettings from "./components/modals/TPOsSettings";
 import { Menu } from "lucide-react";
 import { Settings } from "lucide-react";
 
@@ -18,6 +19,8 @@ function App() {
 
   const [showIndicators, setShowIndicators] = useState(false);
   const [indicators, setIndicators] = useState([]);
+
+  const [tpoSettingsOpen, setTpoSettingsOpen] = useState(false);
 
   const [showChartSettings, setShowChartSettings] = useState(false);
   const [chartConfig, setChartConfig] = useState({
@@ -58,10 +61,33 @@ function App() {
                 color: "#c8b914" 
             }
         ];
-    }
+      }
+
+      // TPO Default
+      if (indicatorId === "tpo") {
+          if (prev.find(ind => ind.id === "tpo")) return prev;
+          return [...prev, { 
+            id: "tpo", 
+            colorNormal: "#00378f", //"#68707d",
+            colorVA: "#bababa", // "#2962FF",
+            colorPOC: "#db8d1f", //#db1f57",
+            colortext: "#B2B5BE",
+            blockSize: 50,
+            showCounts: true,
+            showLines: true,
+          }];
+      }
 
       return [...prev, { id: indicatorId }];
     });
+  };
+
+  // TPO Save Handler
+  const saveTPOSettings = (updatedIndicator) => {
+      setIndicators(prev => prev.map(i => 
+          i.id === "tpo" ? { ...i, ...updatedIndicator } : i
+      ));
+      setTpoSettingsOpen(false);
   };
 
   useEffect(() => {
@@ -98,6 +124,16 @@ function App() {
         />
       )}
 
+      {/* TPO SETTINGS MODAL */}
+      {tpoSettingsOpen && (
+          <TPOsSettings
+            open={tpoSettingsOpen}
+            onClose={() => setTpoSettingsOpen(false)}
+            initial={indicators.find(i => i.id === "tpo")}
+            onSave={saveTPOSettings}
+          />
+      )}
+
       <TopBar
         assets={assetsList}
         selectedAsset={selectedAsset}
@@ -119,6 +155,7 @@ function App() {
             timeframe={timeframe} 
             panelOpen={isPanelOpen}
             indicators={indicators} 
+            onOpenTPOSettings={() => setTpoSettingsOpen(true)} 
             onIndicatorsChange={setIndicators}
             chartSettings={chartConfig}/>
         </div>

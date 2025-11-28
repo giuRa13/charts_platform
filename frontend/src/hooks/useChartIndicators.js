@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { HistogramSeries, LineSeries } from "lightweight-charts";
 import { prepareVolumeData, updateLastVolume } from "../indicators/volume";
 import { prepareEMA, updateLastEMA } from "../indicators/ema";
-
+import { prepareTPOData } from "../indicators/tpo";
+import { TPOSeries } from "../indicators/tpoSeries";
 
 export const useChartIndicators = (
     chartRef, 
@@ -57,7 +58,11 @@ export const useChartIndicators = (
         emaIndicators.forEach(ind => {
             const key = `ema${ind.length}`;
             if (!seriesMapRef.current[key]) {
-                const line = chart.addSeries(LineSeries, { color: ind.color, lineWidth: ind.lineWidth || 2 });
+                const line = chart.addSeries(LineSeries, { 
+                    color: ind.color, 
+                    lineWidth: ind.lineWidth || 2,
+                    priceLineVisible: false,
+                });
                 seriesMapRef.current[key] = line;
                 line.setData(prepareEMA(candlesRef.current, ind.length));
             } else {
@@ -78,6 +83,57 @@ export const useChartIndicators = (
                 }
             }
         });
+
+        // --- TPOs MANAGE ---
+        const tpoIndicator = indicators.find(ind => ind.id === "tpo");
+
+         if (tpoIndicator) {
+           if (!seriesMapRef.current.tpo) {
+                const seriesInstance = new TPOSeries(chart);
+                
+                const series = chart.addCustomSeries(seriesInstance, {
+                    priceScaleId: 'right', 
+                    lastValueVisible: false,
+                    priceLineVisible: false,
+                });
+
+                // Pass the API object to the custom instance
+                seriesInstance.setSeries(series);
+                
+                series._customInstance = seriesInstance;
+                seriesMapRef.current.tpo = series;
+            }
+
+            const blockSize = Number(tpoIndicator.blockSize) || 50;
+            const tpoData = prepareTPOData(candlesRef.current, blockSize);
+
+            // 4. Update Options
+            seriesMapRef.current.tpo.applyOptions({
+                colorNormal: tpoIndicator.colorNormal || "#00378f",
+                colorVA: tpoIndicator.colorVA || "#bababa" ,
+                colorPOC: tpoIndicator.colorPOC || "#db8d1f",
+                blockSize: blockSize,
+                colorText: tpoIndicator.colorText || "#B2B5BE",
+                showCounts: tpoIndicator.showCounts !== false,
+                showLines: tpoIndicator.showLines !== false
+            });
+
+            // 5. Standard API Data Set (Required for AutoScale)
+            // (This just helps the chart calculate High/Low for auto-scaling)
+            seriesMapRef.current.tpo.setData(tpoData);
+            
+            // PASS PREPARED TPO DATA TO RENDER
+            // must call this on the _customInstance, NOT the series API
+            if (seriesMapRef.current.tpo._customInstance) {
+                seriesMapRef.current.tpo._customInstance.setFullData(tpoData);
+            }
+        }
+        else {
+            if (seriesMapRef.current.tpo) {
+                chart.removeSeries(seriesMapRef.current.tpo);
+                delete seriesMapRef.current.tpo;
+            }
+        }
 
     }, [indicators]); // Re-run when indicators change
 };
@@ -126,4 +182,19 @@ export const setIndicatorsData = (seriesMap, indicators, history) => {
             const len = Number(k.replace("ema", ""));
             seriesMap[k].setData(prepareEMA(history, len));
     });
+
+    // TPO History Load
+    if (seriesMap.tpo) {
+        const tpoConfig = indicators.find(i => i.id === "tpo");
+        const blockSize = Number(tpoConfig?.blockSize) || 10;
+        const tpoData = prepareTPOData(history, blockSize);
+        
+        seriesMap.tpo.setData(tpoData);
+        
+        if (seriesMap.tpo._customInstance) {
+            // Ensure series is linked (just in case)
+            seriesMap.tpo._customInstance.setSeries(seriesMap.tpo);
+            seriesMap.tpo._customInstance.setFullData(tpoData);
+        }
+    }
 };
