@@ -10,26 +10,32 @@ const TPOsSettings = ({ open, onClose, initial, onSave }) => {
         colorPOC: "#db8d1f",    
         colorText:"#B2B5BE",
         blockSize: 50,
+        blockWidth: 8,
         showCounts: true,
-        showLines: true
+        showLines: true,
+        expand: false,
     }, [initial]);
 
     const [colorNormal, setColorNormal] = useState(safeInitial.colorNormal || "#00378f");
     const [colorVA, setColorVA] = useState(safeInitial.colorVA || "#bababa");
     const [colorPOC, setColorPOC] = useState(safeInitial.colorPOC || "#db8d1f");
     const [blockSize, setBlockSize] = useState(safeInitial.blockSize);
+    const [blockWidth, setBlockWidth] = useState(safeInitial.blockWidth);
     const [colorText, setColorText] = useState(safeInitial.colorPOC || "#B2B5BE");
     const [showCounts, setShowCounts] = useState(safeInitial.showCounts !== false);
     const [showLines, setShowLines] = useState(safeInitial.showLines !== false);
+    const [expand, setExpand] = useState(safeInitial.expand || false);
 
     React.useEffect(() => {
         setColorNormal(safeInitial.colorNormal || "#00378f");
         setColorVA(safeInitial.colorVA || "#bababa");
         setColorPOC(safeInitial.colorPOC || "#db8d1f");
         setBlockSize(safeInitial.blockSize || 50);
+        setBlockWidth(safeInitial.blockWidth || 8);
         setColorText(safeInitial.colorText || "#B2B5BE");
         setShowCounts(safeInitial.showCounts !== false);
         setShowLines(safeInitial.showLines !== false);
+        setExpand(safeInitial.expand || false);
     }, [safeInitial]);
 
     const handleSave = () => {
@@ -40,8 +46,10 @@ const TPOsSettings = ({ open, onClose, initial, onSave }) => {
             colorPOC,
             colorText,
             blockSize: Number(blockSize),
+            blockWidth: Number(blockWidth),
             showCounts,
-            showLines
+            showLines,
+            expand
         });
         onClose();
     };
@@ -60,6 +68,24 @@ const TPOsSettings = ({ open, onClose, initial, onSave }) => {
                         onChange={(e) => setBlockSize(e.target.value)}
                         className='w-20 bg-[#161616] text-white px-2 py-1 border border-(--primary) outline-none text-right'
                     />
+                </div>
+                <div className='flex items-center justify-between'>
+                    <label className='text-sm'>Block Width (Pixels)</label>
+                    <input
+                        type='number'
+                        min={1}
+                        value={blockWidth}
+                        onChange={(e) => setBlockWidth(e.target.value)}
+                        className='w-20 bg-[#161616] text-white px-2 py-1 border border-(--primary) outline-none text-right'
+                    />
+                </div>
+
+                {/*Split*/}
+                <div className='flex items-center justify-between'>
+                    <label className='text-sm'>Split</label>
+                    <input type="checkbox" 
+                        checked={expand} 
+                        onChange={(e) => setExpand(e.target.checked)} />
                 </div>
 
                 {/* Color */}

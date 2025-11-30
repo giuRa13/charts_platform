@@ -73,8 +73,10 @@ function App() {
             colorPOC: "#db8d1f", //#db1f57",
             colortext: "#B2B5BE",
             blockSize: 50,
+            blockWidth: 8,
             showCounts: true,
             showLines: true,
+            expand: false,
           }];
       }
 

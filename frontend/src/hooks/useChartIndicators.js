@@ -105,6 +105,7 @@ export const useChartIndicators = (
             }
 
             const blockSize = Number(tpoIndicator.blockSize) || 50;
+            const blockWidth = Number(tpoIndicator.blockWidth) || 8;
             const tpoData = prepareTPOData(candlesRef.current, blockSize);
 
             // 4. Update Options
@@ -113,9 +114,11 @@ export const useChartIndicators = (
                 colorVA: tpoIndicator.colorVA || "#bababa" ,
                 colorPOC: tpoIndicator.colorPOC || "#db8d1f",
                 blockSize: blockSize,
+                blockWidth: blockWidth,
                 colorText: tpoIndicator.colorText || "#B2B5BE",
                 showCounts: tpoIndicator.showCounts !== false,
-                showLines: tpoIndicator.showLines !== false
+                showLines: tpoIndicator.showLines !== false,
+                expand: tpoIndicator.expand === true
             });
 
             // 5. Standard API Data Set (Required for AutoScale)
@@ -159,6 +162,33 @@ export const updateLiveIndicators = (seriesMap, indicators, candles) => {
             updateLastEMA(seriesMap[key], candles, len);
         }
     });
+
+    if (seriesMap.tpo && candles.length > 1) {
+        const lastCandle = candles[candles.length -1];
+        const prevCandle = candles[candles.length -2];
+
+        // (update evry 30min)
+        // Calculate 30-minute slot index for current and previous candle (1800 seconds = 30 min)
+        // const currentSlot = Math.floor(lastCandle.time / 1800); // buckets time into 30-minute integers. 10:00 
+        // const prevSlot = Math.floor(prevCandle.time / 1800); // Index 20 10:29 → Index 20 10:30 Index 21 (Change detected!) 
+        // const isNewQuad = currentSlot > prevSlot;
+        //if (isNewQuad) {`
+
+        // (update every 1 minute)
+        if (lastCandle.time !== prevCandle.time){
+        //if (isNewQuad) {
+            const tpoConfig = indicators.find(i => i.id === "tpo");
+            const blockSize = Number(tpoConfig?.blockSize) || 50;
+
+            const tpoData = prepareTPOData(candles, blockSize);
+            // pdate Series (API Wrapper)
+            seriesMap.tpo.setData(tpoData);
+            // update custom renderer
+            if (seriesMap.tpo._customInstance) {
+                seriesMap.tpo._customInstance.setFullData(tpoData);
+            }
+        }
+    }
 };
 
 // 3. Logic to Set Initial Data (After Fetch) <--- NEW FUNCTION

@@ -173,9 +173,9 @@ export const useDrawings = (chartRef, seriesRef, containerRef, onOpenSettings) =
             if (start.x === null || end.x === null) return;
 
             ctx.lineWidth = shape.lineWidth || 2;
-            ctx.strokeStyle = shape.color || '#2962FF';
+            ctx.strokeStyle = shape.color || "#e490d9";
             ctx.fillStyle = shape.type === 'rect' 
-                ? (shape.color ? shape.color + '33' : 'rgba(41, 98, 255, 0.1)') // Add simple hex opacity or default
+                ? (shape.color ? shape.color + '33' : 'rgba(228, 144, 217, 0.1)') // Add simple hex opacity or default
                 : 'transparent';
 
             ctx.beginPath();

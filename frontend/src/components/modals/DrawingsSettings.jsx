@@ -5,12 +5,12 @@ import { Trash2 } from "lucide-react";
 
 const DrawingsSettings = ({ open, onClose, currentObject, onSave, onDelete }) => {
 
-    const [settings, setSettings] = useState({ color: "#2962FF", lineWidth: 2 });
+    const [settings, setSettings] = useState({ color: "#e490d9", lineWidth: 2 });
     
     React.useEffect(() => {
         if (currentObject) {
             setSettings({
-                color: currentObject.color || "#2962FF",
+                color: currentObject.color || "#e490d9",
                 lineWidth: currentObject.lineWidth || 2
             });
         }

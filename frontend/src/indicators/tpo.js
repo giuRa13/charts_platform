@@ -32,6 +32,7 @@ export function prepareTPOData(candles, blockSizeInput = 50) {
             };
         }
 
+        // Slot Index (0-47)
         // Example: 10:45 AM ---> (10 * 2) + 1 = Slot 21.
         const slotIndex = (date.getUTCHours() * 2) + (date.getUTCMinutes() >= 30 ? 1 : 0);
 
@@ -58,6 +59,12 @@ export function prepareTPOData(candles, blockSizeInput = 50) {
             const minIndex = Math.floor(range.low / blockSize); //  convert the price range into Grid Steps
             const maxIndex = Math.floor(range.high / blockSize);
 
+            // Calculate the specific timestamp for this 30m slot (SPLIT feature)
+            const profileDate = new Date(dayProfile.time * 1000);
+            const dayStartTs = Date.UTC(profileDate.getUTCFullYear(), profileDate.getUTCMonth(), profileDate.getUTCDate()) / 1000;
+
+            const slotTime = dayStartTs + (Number(slotIdx) * 1800); // 30 mins = 1800 seconds
+
             // iterates from the Low Index to the High Index and creates a block object for every step
             // If the price moved from 100 to 120 in that 30m slot, and block size is 10, it creates blocks at 100, 110, and 120
             for (let i = minIndex; i <= maxIndex; i++) {
@@ -65,7 +72,11 @@ export function prepareTPOData(candles, blockSizeInput = 50) {
                 // Use Math.round to clean up tiny decimals (e.g. 1900.0000001 -> 1900)
                 const price = Math.round((i * blockSize) * 1000000) / 1000000;
 
-                const block = { price: price, slotIndex: Number(slotIdx) };
+                const block = { 
+                    price: price, 
+                    slotIndex: Number(slotIdx),
+                    time: slotTime// store time for split view
+                };
                 rawBlocks.push(block);
 
                 priceCounts[price] = (priceCounts[price] || 0) + 1;

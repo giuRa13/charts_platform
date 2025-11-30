@@ -8,7 +8,7 @@ import VolumeSettings from "./modals/VolumeSettings";
 import DrawingsSettings from "./modals/DrawingsSettings";
 import Spinner from "./Spinner";
 import Clock from "./Clock";
-import { GripVertical, Settings } from "lucide-react";
+import { GripVertical, Settings, TrendingUpDown, Merge, Info, StepBack, Slash, MoveHorizontal } from "lucide-react";
 import { Pencil, Square, MousePointer2, Trash2, ArrowRight, X } from "lucide-react";
 import useDraggable from "../hooks/useDraggable";
 
@@ -36,6 +36,7 @@ const Chart = ({
     const [EMAsettingsOpen, setEMAsettingsOpen] = useState(false);
     const [volumeSettingsOpen, setVolumeSettingsOpen] = useState(false);
     const [editingIndicator, setEditingIndicator] = useState(null);
+    const [tpoPopover, setTpoPopover] = useState(null);
 
     const [loading, setLoading] = useState(false);
     
@@ -325,6 +326,68 @@ const Chart = ({
     }, [panelOpen]);
 
 
+    // --- EFFECT: DETECT HOVER OVER TPO PROFILE ---
+    useEffect(() => {
+        const container = chartContainer.current;
+        if (!container) return;
+
+        const handleDoubleClick = (e) => {
+            const rect = container.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const containerW = container.clientWidth;
+            const containerH = container.clientHeight;
+
+            if (seriesMapRef.current.tpo && seriesMapRef.current.tpo._customInstance) {
+                const hit = seriesMapRef.current.tpo._customInstance.hitTest(x);
+
+                if (hit) {
+                    const popoverWidth = 200; 
+                    const popoverHeight = 160;
+                    // Ensure it doesn't go off the right edge
+                    const safeX = Math.min(x + 20, containerW - popoverWidth);
+                    // Ensure it doesn't go off the bottom edge
+                    const safeY = Math.min(y, containerH - popoverHeight);
+                    setTpoPopover({
+                        x: safeX,
+                        y: safeY,
+                        data: hit // the profile data from renderer
+                    });
+                } else {
+                    setTpoPopover(null); // Clicked empty space
+                }
+            }
+        };
+
+        container.addEventListener('dblclick', handleDoubleClick);
+        
+        return () => {
+            container.removeEventListener('dblclick', handleDoubleClick);
+        };
+    }, []); 
+
+    // --- HANDLER: CLICK SPLIT BUTTON ---
+    const handleToggleSplit = () => {
+        if (tpoPopover && seriesMapRef.current.tpo._customInstance) {
+            const time = tpoPopover.data.time;
+            seriesMapRef.current.tpo._customInstance.toggleSplit(time);
+            seriesMapRef.current.tpo.applyOptions({ _redraw: Date.now() }); // force redraw
+            // Update button state locally
+            setTpoPopover(prev => ({
+                ...prev,
+                data: {...prev.data, isExpanded: !prev.data.isExpanded}
+            }));
+        }
+    };
+
+    const formatDate = (ts) => {
+        return new Date(ts * 1000).toLocaleDateString(undefined, { 
+            weekday: 'short', month: 'short', day: 'numeric' 
+        });
+    };
+
+
     return (
         <div className="relative w-full h-full">
 
@@ -332,6 +395,59 @@ const Chart = ({
             {loading && <Spinner/>}
             {chartSettings.showClock && (
                 <Clock color={chartSettings.clockColor}/>
+            )}
+            {/* --- TPO FLOAT BUTTON --- */}
+            {tpoPopover && (
+                <div className="absolute z-50 bg-(--gray) border border-(--graphite) shadow-xl rounded-sm p-3 w-48 
+                flex flex-col gap-2 animate-in zoom-in-95 duration-100"
+                style={{ 
+                    left: tpoPopover.x, // Prevent overflow right
+                    top: tpoPopover.y// Prevent overflow bottom
+                }}> 
+                    <div className="flex justify-between items-center border-b border-[#303030] pb-2">
+                        <span className="font-bold text-sm flex items-center gap-2">
+                            <Info size={14} className="text-[#2962FF]"/>
+                            {formatDate(tpoPopover.data.time)}
+                        </span>
+                        <button onClick={() => setTpoPopover(null)} className="hover:text-(--red) hover:bg-(--redT)">
+                            <X size={14} />
+                        </button>
+                    </div>
+                    <div className="flex flex-col text-xs gap-1 text-gray-300">
+                        <div className="flex justify-between">
+                            <span>POC:</span>
+                            <span className="text-[#FFD700] font-mono">{tpoPopover.data.levels.poc}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>VA High:</span>
+                            <span className="text-[#2962FF] font-mono">{tpoPopover.data.levels.vah}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>VA Low:</span>
+                            <span className="text-[#2962FF] font-mono">{tpoPopover.data.levels.val}</span>
+                        </div>
+                        <div className="border-t border-[#303030] my-1"></div>
+                        <div className="flex justify-between">
+                            <span>Above POC:</span>
+                            <span>{tpoPopover.data.stats.above}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Below POC:</span>
+                            <span>{tpoPopover.data.stats.below}</span>
+                        </div>
+                    </div>
+                    <button onClick={() => onOpenTPOSettings()} 
+                    className="mt-1 w-full flex items-center justify-center gap-2 py-1.5 bg-[#2c99c0] hover:bg-[#2c99c0]/80 text-white text-xs font-bold rounded-sm transition-colors">
+                        <Settings className="w-4 h-4"/>
+                        <span>Settings</span>
+                    </button>
+                    <button onClick={handleToggleSplit}
+                    className="mt-1 w-full flex items-center justify-center gap-2 py-1.5 bg-[#2c99c0] hover:bg-[#2c99c0]/80 text-white text-xs font-bold rounded-sm transition-colors"
+                    >
+                        {tpoPopover.data.isExpanded ? <StepBack size={14}/> : <TrendingUpDown size={14}/>}
+                        {tpoPopover.data.isExpanded ? "Merge Profile" : "Split Profile"}
+                    </button>
+                </div>
             )}
             {/* 1. ASSET INFO BADGE */}
                 <div className="absolute top-2 left-4 z-45 flex items-center gap-2 px-3 py-2 bg-(--black)/20 border border-(--graphite) rounded-sm shadow-md">
@@ -411,11 +527,11 @@ const Chart = ({
                 </button>
                 <button onClick={() => setCurrentTool('line')}
                 className={`p-2 rounded hover:bg-(--primary)/40 ${currentTool === 'line' ? 'bg-(--primary)' : ''}`}>
-                    <Pencil size={18} />
+                    <Slash size={18} />
                 </button>
                 <button onClick={() => setCurrentTool('ray')}
                     className={`p-2 rounded hover:bg-(--primary)/40 ${currentTool === 'ray' ?'bg-(--primary)' : ''}`}>
-                    <ArrowRight size={18} />
+                    <MoveHorizontal size={18} />
                 </button>
                 <button onClick={() => setCurrentTool('rect')}
                 className={`p-2 rounded hover:bg-gray-700 ${currentTool === 'rect' ? 'bg-(--primary)' : ''}`}>
