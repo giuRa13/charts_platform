@@ -158,7 +158,8 @@ export function prepareTPOData(candles, blockSizeInput = 50) {
             stats: { 
                 above: countAbove, 
                 below: countBelow,
-                minPrice: levels[0] // Store min price for positioning text
+                minPrice: levels[0], // Store min price for positioning text
+                maxPrice: levels[levels.length - 1] // Store Max Price for collision check (for Naked POC)
             }
         };
     }).sort((a, b) => a.time - b.time);

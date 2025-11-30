@@ -73,10 +73,11 @@ function App() {
             colorPOC: "#db8d1f", //#db1f57",
             colortext: "#B2B5BE",
             blockSize: 50,
-            blockWidth: 8,
+            blockWidth: 6,
             showCounts: true,
             showLines: true,
             expand: false,
+            showNakedPOC: false,
           }];
       }
 
@@ -167,7 +168,7 @@ function App() {
           <>
           <PanelResizeHandle className="w-1 bg-(--red)" />
           <Panel minSize={10} defaultSize={20}>
-            <div className="w-full h-full border-l border-(--red)">
+            <div className="w-full h-full border-l-2 border-(--graphite)">
               <p className="p-2 text-(--red)">Panel A content</p>
             </div>
           </Panel>

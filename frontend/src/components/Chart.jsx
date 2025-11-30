@@ -8,8 +8,8 @@ import VolumeSettings from "./modals/VolumeSettings";
 import DrawingsSettings from "./modals/DrawingsSettings";
 import Spinner from "./Spinner";
 import Clock from "./Clock";
-import { GripVertical, Settings, TrendingUpDown, Merge, Info, StepBack, Slash, MoveHorizontal } from "lucide-react";
-import { Pencil, Square, MousePointer2, Trash2, ArrowRight, X } from "lucide-react";
+import { GripVertical, Settings, TrendingUpDown, Info, StepBack, Slash, MoveHorizontal, Eye, EyeOff } from "lucide-react";
+import { Square, MousePointer2, Trash2, ArrowRight, X } from "lucide-react";
 import useDraggable from "../hooks/useDraggable";
 
 
@@ -39,7 +39,8 @@ const Chart = ({
     const [tpoPopover, setTpoPopover] = useState(null);
 
     const [loading, setLoading] = useState(false);
-    
+
+    const [showCandles, setShowCandles] = useState(true);
 
     // Drawings ////////////////////////////////////////////////////////////////////////////////
     const [drawingSettingsOpen, setDrawingSettingsOpen] = useState(false);
@@ -160,15 +161,7 @@ const Chart = ({
 
         priceSeriesRef.current = priceSeries;
 
-        const resize = () => {
-            const { width, height } = container.getBoundingClientRect();
-            chart.resize(width, height);
-        };
-        window.addEventListener("resize", resize);
-        resize();
-
         return () => {
-            window.removeEventListener("resize", resize);
             try { if (wsRef.current) wsRef.current.close(); } catch (e) {console.log(e)}
             try { chart.remove(); } catch (e) {console.log(e)}
             };
@@ -258,20 +251,45 @@ const Chart = ({
 
     }, [selectedAsset, timeframe]);
 
-    // react to panelOpen (resize after layout shift)
+    // handles Window Resize, Panel Resize, and Dragging automatically
     useEffect(() => {
-        // small delay to let layout complete
-        const t = setTimeout(() => {
-            if (!chartRef.current || !chartContainer.current) return;
-            const { width, height } = chartContainer.current.getBoundingClientRect();
+        const container = chartContainer.current;
+        
+        // Safety check: wait for chart and container to exist
+        if (!container || !chartRef.current) return;
+
+        const resizeObserver = new ResizeObserver((entries) => {
+            if (entries.length === 0 || !entries[0].contentRect) return;
+            
+            const { width, height } = entries[0].contentRect;
+            
+            // 1. Resize Lightweight Chart
             chartRef.current.resize(width, height);
-            // also ensure panes recalc
-            chartRef.current.timeScale().fitContent(); 
-        }, 120);
+            
+            // 2. Resize Drawing Canvas
+            if (canvasRef.current) {
+                // Set HTML attributes (buffer size) matches CSS size
+                canvasRef.current.width = width;
+                canvasRef.current.height = height;
+                // Redraw drawings immediately to prevent stretching
+                requestAnimationFrame(renderDrawings);
+            }
+        });
 
-        return () => clearTimeout(t);
-    }, [panelOpen]);
+        resizeObserver.observe(container);
 
+        return () => resizeObserver.disconnect();
+        
+    }, [renderDrawings]);
+
+    // toggle price candles visibility
+    useEffect(() => {
+        if (priceSeriesRef.current) {
+            priceSeriesRef.current.applyOptions({
+                visible: showCandles
+            });
+        }
+    }, [showCandles]);
 
     /// Indicators ////////////////////////////////////////////////////////////////////////
     const openEMAsettings = (indicator) => {
@@ -409,7 +427,7 @@ const Chart = ({
                             <Info size={14} className="text-[#2962FF]"/>
                             {formatDate(tpoPopover.data.time)}
                         </span>
-                        <button onClick={() => setTpoPopover(null)} className="hover:text-(--red) hover:bg-(--redT)">
+                        <button onClick={() => setTpoPopover(null)} className="p-1 hover:text-(--red) hover:bg-(--redT)">
                             <X size={14} />
                         </button>
                     </div>
@@ -469,6 +487,11 @@ const Chart = ({
                         <span className="text-[10px] text-white bg-(--red) p-1 mx-2 rounded-sm">{timeframe}</span>
                     </div>
                     <span className="text-xs font-mono">BINANCE • SPOT</span>
+                    <div className="w-px h-6 bg-gray-600 mx-4"></div>
+                    <button onClick={() => setShowCandles(!showCandles)}
+                    className="hover:text-(--red) mr-3">
+                        {showCandles ? <Eye size={16}/> : <EyeOff size={16}/>}
+                    </button>
                 </div>
                 {indicators.length > 0 && (
                 <div className="absolute top-12 left-0 text-sm px-4 py-1 z-40">

@@ -7,7 +7,7 @@ class TPORenderer {
         this._expandedTimes = new Set(); // Track which specific days are expanded
     }
 
-    draw(target/*, priceConverter, isHovered, hitTestData*/) {
+    draw(target) {
         if (!this._fullData || this._fullData.length === 0 || !this._options || !this._chart || !this._series) return;
 
         // useMediaCoordinateSpace: gives a high-resolution canvas contex
@@ -23,7 +23,7 @@ class TPORenderer {
 
             ctx.save();
 
-            this._fullData.forEach(dayProfile => {
+            this._fullData.forEach((dayProfile, i) => {
                 // If Global Expand is TRUE: Set entry means "Collapse this one"
                 // If Global Expand is FALSE: Set entry means "Expand this one"
                 // use !== (XOR) to achieve this toggle behavior
@@ -132,6 +132,52 @@ class TPORenderer {
                         drawLine(dayProfile.levels.vah + blockSize, this._options.colorVA || "#bababa");
                         drawLine(dayProfile.levels.poc + (blockSize / 2), this._options.colorPOC || "#db8d1f", 3);
                         //drawLine(dayProfile.levels.poc, this._options.colorPOC || "#FFD700", 10);
+                    }
+
+                    // NAKED POC
+                    if (this._options.showNakedPOC && !isExpanded) {
+                        const pocPrice = dayProfile.levels.poc;
+                        let touchX = null;
+                        let isNaked = true;
+
+                        // look ahad loop
+                        for (let j = i + 1; j < this._fullData.length; j++) {
+                            const futureProfile = this._fullData[j];
+                            //
+                            if (pocPrice >= futureProfile.stats.minPrice && pocPrice <= futureProfile.stats.maxPrice) {
+                                isNaked = false;
+
+                                if (futureProfile.anchorIndex !== undefined) 
+                                    touchX = timeScale.logicalToCoordinate(futureProfile.anchorIndex);
+                                else 
+                                    touchX = timeScale.timeToCoordinate(futureProfile.time);
+                            
+                                break;
+                            }
+                        }   
+                        const lineStartX = dayStartX;
+                        let lineEndX;
+                        if (isNaked) {
+                            // Never touched: Extend to infinity (current right edge of screen)
+                            lineEndX = scope.mediaSize.width;
+                        }
+                        else {
+                            lineEndX = touchX;
+                        }
+
+                        if (lineEndX !== null && lineEndX > lineStartX) {
+                            const y = this._series.priceToCoordinate(pocPrice + (blockSize / 2));
+                            if(y !== null) {
+                                ctx.beginPath();
+                                //ctx.setLineDash([4, 4]); 
+                                ctx.strokeStyle = this._options.colorPOC || "#db8d1f";
+                                ctx.lineWidth = 2;
+                                ctx.moveTo(lineStartX, y);
+                                ctx.lineTo(lineEndX, y);
+                                ctx.stroke();
+                                ctx.setLineDash([]); // Reset dash for next drawing
+                            }
+                        }
                     }
 
                     // Draw Stats
@@ -245,10 +291,11 @@ export class TPOSeries {
             colorPOC: "#db8d1f",
             colorText: "#B2B5BE",
             blockSize: 50,
-            blockWidth: 8,
+            blockWidth: 6,
             showCounts: true,
             showLines: true,
             expand: false, // Global setting
+            showNakedPOC: false,
             lastValueVisible: false,
             priceLineVisible: false
         };

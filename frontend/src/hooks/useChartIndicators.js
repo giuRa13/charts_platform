@@ -105,7 +105,7 @@ export const useChartIndicators = (
             }
 
             const blockSize = Number(tpoIndicator.blockSize) || 50;
-            const blockWidth = Number(tpoIndicator.blockWidth) || 8;
+            const blockWidth = Number(tpoIndicator.blockWidth) || 6;
             const tpoData = prepareTPOData(candlesRef.current, blockSize);
 
             // 4. Update Options
@@ -118,7 +118,8 @@ export const useChartIndicators = (
                 colorText: tpoIndicator.colorText || "#B2B5BE",
                 showCounts: tpoIndicator.showCounts !== false,
                 showLines: tpoIndicator.showLines !== false,
-                expand: tpoIndicator.expand === true
+                expand: tpoIndicator.expand === true,
+                showNakedPOC: tpoIndicator.showNakedPOC === true
             });
 
             // 5. Standard API Data Set (Required for AutoScale)
