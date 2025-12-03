@@ -4,7 +4,8 @@ import { prepareVolumeData, updateLastVolume } from "../indicators/volume";
 import { prepareEMA, updateLastEMA } from "../indicators/ema";
 import { prepareTPOData } from "../indicators/tpo";
 import { TPOSeries } from "../indicators/tpoSeries";
-
+import { prepareVPData } from "../indicators/sessionVolumeProfile";
+import { VPSeries } from "../indicators/svpSeries";
 export const useChartIndicators = (
     chartRef, 
     seriesMapRef, 
@@ -139,6 +140,47 @@ export const useChartIndicators = (
             }
         }
 
+        // --- VP MANAGE ---
+        const vpIndicator = indicators.find(ind => ind.id === "svp");
+        if (vpIndicator) {
+            if (!seriesMapRef.current.vp) {
+                const seriesInstance = new VPSeries(chart);
+                const series = chart.addCustomSeries(seriesInstance, {
+                    priceScaleId: 'right', 
+                    lastValueVisible: false,
+                    priceLineVisible: false,
+                });
+                seriesInstance.setSeries(series);
+                series._customInstance = seriesInstance;
+                seriesMapRef.current.vp = series;
+            }
+
+            const rowSize = Number(vpIndicator.rowSize) || 10;
+            const vpData = prepareVPData(candlesRef.current, rowSize);
+
+            seriesMapRef.current.vp.applyOptions({
+                colorVA: vpIndicator.colorVA || '#bababa',
+                colorNormal: vpIndicator.colorNormal || '#5c5c5c',
+                colorPOC: vpIndicator.colorPOC || '#e91c30',
+                width: vpIndicator.width || 100,
+                rowSize: rowSize,
+                xOffset: Number(vpIndicator.xOffset) || 0,
+                showVALines: vpIndicator.showVALines === true,
+                showNakedPOC: vpIndicator.showNakedPOC === true,
+                showCounts: vpIndicator.showCounts !== false
+            });
+
+            seriesMapRef.current.vp.setData(vpData); // For API
+            if (seriesMapRef.current.vp._customInstance) {
+                seriesMapRef.current.vp._customInstance.setFullData(vpData); // For Renderer
+            }
+        } else {
+            if (seriesMapRef.current.vp) {
+                chart.removeSeries(seriesMapRef.current.vp);
+                delete seriesMapRef.current.vp;
+            }
+        }
+
     }, [indicators]); // Re-run when indicators change
 };
 
@@ -164,31 +206,42 @@ export const updateLiveIndicators = (seriesMap, indicators, candles) => {
         }
     });
 
-    if (seriesMap.tpo && candles.length > 1) {
-        const lastCandle = candles[candles.length -1];
-        const prevCandle = candles[candles.length -2];
+    // TPO and SVP
+    // Check for New Candle (1 Minute boundary)
+    // This prevents heavy calculations on every tick
+    if (candles.length < 2) return;
+    const lastCandle = candles[candles.length - 1];
+    const prevCandle = candles[candles.length - 2];
+    const isNewCandle = lastCandle.time !== prevCandle.time;
+    if (!isNewCandle) return;
 
-        // (update evry 30min)
-        // Calculate 30-minute slot index for current and previous candle (1800 seconds = 30 min)
-        // const currentSlot = Math.floor(lastCandle.time / 1800); // buckets time into 30-minute integers. 10:00 
-        // const prevSlot = Math.floor(prevCandle.time / 1800); // Index 20 10:29 → Index 20 10:30 Index 21 (Change detected!) 
-        // const isNewQuad = currentSlot > prevSlot;
-        //if (isNewQuad) {`
+    if (seriesMap.tpo) {
 
-        // (update every 1 minute)
-        if (lastCandle.time !== prevCandle.time){
-        //if (isNewQuad) {
-            const tpoConfig = indicators.find(i => i.id === "tpo");
-            const blockSize = Number(tpoConfig?.blockSize) || 50;
+        const tpoConfig = indicators.find(i => i.id === "tpo");
+        const blockSize = Number(tpoConfig?.blockSize) || 50;
 
-            const tpoData = prepareTPOData(candles, blockSize);
-            // pdate Series (API Wrapper)
-            seriesMap.tpo.setData(tpoData);
-            // update custom renderer
-            if (seriesMap.tpo._customInstance) {
-                seriesMap.tpo._customInstance.setFullData(tpoData);
-            }
-        }
+        const tpoData = prepareTPOData(candles, blockSize);
+        // pdate Series (API Wrapper)
+        seriesMap.tpo.setData(tpoData);
+        // update custom renderer
+        if (seriesMap.tpo._customInstance) 
+            seriesMap.tpo._customInstance.setFullData(tpoData); 
+        
+    }
+
+    // SVP
+    // check if a new 1-minute candle has formed, and if so, recalculate the Volume Profile. 
+    // This prevents the chart from freezing due to calculating heavy math on every single millisecond tick
+    if (seriesMap.vp) {
+        const vpConfig = indicators.find(i => i.id === "svp");
+        const rowSize = Number(vpConfig?.rowSize) || 10;
+
+        const vpData = prepareVPData(candles, rowSize);
+
+        seriesMap.vp.setData(vpData);
+
+        if (seriesMap.vp._customInstance)
+            seriesMap.vp._customInstance.setFullData(vpData);
     }
 };
 
@@ -226,6 +279,23 @@ export const setIndicatorsData = (seriesMap, indicators, history) => {
             // Ensure series is linked (just in case)
             seriesMap.tpo._customInstance.setSeries(seriesMap.tpo);
             seriesMap.tpo._customInstance.setFullData(tpoData);
+        }
+    }
+
+    // SVP 
+    if (seriesMap.vp) {
+        const vpConfig = indicators.find(i => i.id === "svp");
+        const rowSize = Number(vpConfig?.rowSize) || 10;
+
+        // Recalculate with new history
+        const vpData = prepareVPData(history, rowSize);
+
+        // Update Series API
+        seriesMap.vp.setData(vpData);
+
+        // Update Custom Renderer
+        if (seriesMap.vp._customInstance) {
+            seriesMap.vp._customInstance.setFullData(vpData);
         }
     }
 };

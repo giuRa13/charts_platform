@@ -21,6 +21,7 @@ const Chart = ({
     onIndicatorsChange, 
     chartSettings,
     onOpenTPOSettings,
+    onOpenSVPSettings
 }) => {
 
     const chartContainer = useRef();
@@ -118,6 +119,7 @@ const Chart = ({
 
         const chart = createChart(container, {
             layout: { 
+                attributionLogo: false ,
                 textColor: chartSettings.textColor,
                 background: { type: "solid", color: chartSettings.backgroundColor },
                 panes: {
@@ -520,6 +522,11 @@ const Chart = ({
                                 )}
                                 {ind.id == "tpo" && (
                                     <button onClick={() => onOpenTPOSettings(ind)} className="hover:text-(--red) cursor-pointer">
+                                        <Settings className="w-4 h-4"/>
+                                    </button>
+                                )}
+                                {ind.id == "svp" && (
+                                    <button onClick={() => onOpenSVPSettings(ind)} className="hover:text-(--red) cursor-pointer">
                                         <Settings className="w-4 h-4"/>
                                     </button>
                                 )}

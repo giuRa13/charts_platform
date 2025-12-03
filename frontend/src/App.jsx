@@ -9,6 +9,7 @@ import ChartSettings from "./components/modals/ChartSettings";
 import TPOsSettings from "./components/modals/TPOsSettings";
 import { Menu } from "lucide-react";
 import { Settings } from "lucide-react";
+import SVPSettings from "./components/modals/SVPSettings";
 
 function App() {
   const [assetsList, setAssetsList] = useState([]);
@@ -21,6 +22,7 @@ function App() {
   const [indicators, setIndicators] = useState([]);
 
   const [tpoSettingsOpen, setTpoSettingsOpen] = useState(false);
+  const [svpSettingsOpen, setSvpSettingsOpen] = useState(false);
 
   const [showChartSettings, setShowChartSettings] = useState(false);
   const [chartConfig, setChartConfig] = useState({
@@ -81,6 +83,19 @@ function App() {
           }];
       }
 
+       if (indicatorId === "svp") {
+          if (prev.find(ind => ind.id === "svp")) return prev;
+          return [...prev, { 
+            id: "svp", 
+            colorNormal: "#5c5c5c",
+            colorVA: "#bababa", 
+            colorPOC: "#e91c30", 
+            rowSize: 50,
+            width: 100,
+            xOffset: 0
+          }];
+      }
+
       return [...prev, { id: indicatorId }];
     });
   };
@@ -91,6 +106,13 @@ function App() {
           i.id === "tpo" ? { ...i, ...updatedIndicator } : i
       ));
       setTpoSettingsOpen(false);
+  };
+
+  const saveSVPSettings = (updatedIndicator) => {
+      setIndicators(prev => prev.map(i => 
+          i.id === "svp" ? { ...i, ...updatedIndicator } : i
+      ));
+      setSvpSettingsOpen(false);
   };
 
   useEffect(() => {
@@ -137,6 +159,15 @@ function App() {
           />
       )}
 
+      {svpSettingsOpen && (
+          <SVPSettings
+            open={svpSettingsOpen}
+            onClose={() => setSvpSettingsOpen(false)}
+            initial={indicators.find(i => i.id === "svp")}
+            onSave={saveSVPSettings}
+          />
+      )}
+
       <TopBar
         assets={assetsList}
         selectedAsset={selectedAsset}
@@ -159,6 +190,7 @@ function App() {
             panelOpen={isPanelOpen}
             indicators={indicators} 
             onOpenTPOSettings={() => setTpoSettingsOpen(true)} 
+            onOpenSVPSettings={() => setSvpSettingsOpen(true)} 
             onIndicatorsChange={setIndicators}
             chartSettings={chartConfig}/>
         </div>

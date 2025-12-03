@@ -32,7 +32,7 @@ const SearchBar = ({assets, onSelectAsset}) => {
 
         return parts.map((part, i) =>
             regex.test(part) ? (
-                <span key={i} className="text-(--red) font-bold">
+                <span key={i} className="text-(--blue-green) font-bold">
                     {part}
                 </span>
             ) : (

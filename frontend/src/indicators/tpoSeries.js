@@ -143,7 +143,6 @@ class TPORenderer {
                         // look ahad loop
                         for (let j = i + 1; j < this._fullData.length; j++) {
                             const futureProfile = this._fullData[j];
-                            //
                             if (pocPrice >= futureProfile.stats.minPrice && pocPrice <= futureProfile.stats.maxPrice) {
                                 isNaked = false;
 
@@ -201,7 +200,7 @@ class TPORenderer {
                                 if (Math.abs(yBottom - yTop) < 6) //return;
                                     ctx.font = '4px sans-serif';
 
-                                if (Math.abs(yBottom - yTop) < 3) return;
+                                if (Math.abs(yBottom - yTop) < 2) return;
 
                                 const yMid = (yTop + yBottom) / 2;
                                 const xText = dayStartX - 8; // 4px padding to the left of the start
