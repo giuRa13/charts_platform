@@ -41,132 +41,127 @@ class VPRenderer {
 
                 if (xStart === null) return;
                 const drawX = xStart + xOffset;
-                // Check if the DRAWING position is off-screen
-                if (drawX < -widthScale || drawX > scope.mediaSize.width) return;
+                // store visibility for naked poc
+                const isProfileOnScreen = (drawX > -widthScale - 100 && drawX < scope.mediaSize.width);
 
-                // 2. Draw Rows
-                if (profile.rows) {
-                    profile.rows.forEach(row => {
-                        // Y Coords
-                        const yTop = this._series.priceToCoordinate(row.price + rowSize);
-                        const yBottom = this._series.priceToCoordinate(row.price);
-
-                        if (yBottom === null || yTop === null) return;
-
-                        let height = Math.abs(yBottom - yTop);
-                        if (height < 1) height = 1;
-                        const drawY = Math.min(yTop, yBottom);
-
-                        // width calculation (Relative to Max Volume of the day)
-                        const barWidth = (row.vol / profile.maxVolume) * widthScale;
-
-                        // Colors
-                        if (row.isPoc) ctx.fillStyle = this._options.colorPOC;
-                        else if (row.isVA) ctx.fillStyle = this._options.colorVA;
-                        else ctx.fillStyle = this._options.colorNormal;
-
-                        // xStart + 1 to leave a tiny gap from the day separator
-                        ctx.fillRect(drawX + 1, drawY, barWidth, height);
-                    });
-                }
-
-                // 3. Draw VA Lines
-                if (this._options.showVALines && profile.levels) {
-                    const lineLength = widthScale * 2;
-                    const startLineX = drawX + 1;
-                    const endLineX = drawX + 1 + lineLength;
-
-                    let endX = null;
-                    const nextProfile = this._fullData[this._fullData.indexOf(profile) + 1];
-
-                    if (nextProfile) {
-                        if (nextProfile.anchorIndex !== undefined) 
-                            endX = timeScale.logicalToCoordinate(nextProfile.anchorIndex);
-                        else 
-                            endX = timeScale.timeToCoordinate(nextProfile.time);    
-                    }
-
-                    // Logic: If next profile coordinate is valid, stop 40px before it.
-                    // If not valid (future), extend to current right edge
-                    if (endX !== null) {
-                        endX = endX - 40; // Padding
-                    } else {
-                        // Current day: Extend to right edge of chart or last bar
-                        endX = startLineX + 300; // fallback width if today
-                    }
-
-                    const drawLevel = (price, color, lineWidth = 1, isDotted = false) => {
-                        const y = this._series.priceToCoordinate(price);
-                        if (y === null) return;
-
-                        ctx.beginPath();
-                        ctx.strokeStyle = color;
-                        ctx.lineWidth = lineWidth;
-
-                        if (isDotted) 
-                            ctx.setLineDash([3, 3]); // 3px dash, 3px gap
-                        else 
-                            ctx.setLineDash([]); // Solid
-                        
-
-                        ctx.moveTo(startLineX, y);
-                        ctx.lineTo(endX, y);
-                        ctx.stroke();
-                    };
-
-                    drawLevel(profile.levels.val, this._options.colorVA, 1, true);
-                    drawLevel(profile.levels.vah + rowSize, this._options.colorVA, 1, true);
-                    drawLevel(profile.levels.poc + (rowSize/2), this._options.colorPOC, 2, true);
-                }
-
-                // Stats Text
-                if (this._options.showCounts) {
-                    ctx.font = '10px sans-serif';
-                    ctx.textAlign = 'right';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = '#B2B5BE';
-
+                // 2.  Draw Rows and Text (ONLY IF VISIBLE)
+                if (isProfileOnScreen) {
                     if (profile.rows) {
                         profile.rows.forEach(row => {
+                            // Y Coords
                             const yTop = this._series.priceToCoordinate(row.price + rowSize);
                             const yBottom = this._series.priceToCoordinate(row.price);
-
                             if (yBottom === null || yTop === null) return;
 
-                            if (Math.abs(yBottom - yTop) < 6) ctx.font = '4px sans-serif';
+                            let height = Math.abs(yBottom - yTop);
+                            if (height < 1) height = 1;
+                            const drawY = Math.min(yTop, yBottom);
+                            // width calculation (Relative to Max Volume of the day)
+                            const barWidth = (row.vol / profile.maxVolume) * widthScale;
 
-                            // Only draw text if rows are tall enough
-                            if (Math.abs(yBottom - yTop) < 2) return;
+                            // Colors
+                            if (row.isPoc) ctx.fillStyle = this._options.colorPOC;
+                            else if (row.isVA) ctx.fillStyle = this._options.colorVA;
+                            else ctx.fillStyle = this._options.colorNormal;
 
-                            const yMid = (yTop + yBottom) / 2;
-
-                            const volText = Math.round(row.vol).toString();
-
-                            ctx.fillText(volText, drawX - 4, yMid);
+                            // xStart + 1 to leave a tiny gap from the day separator
+                            ctx.fillRect(drawX + 1, drawY, barWidth, height);
                         });
                     }
 
-                    if (profile.stats) {
-                        const yBottomProfile = this._series.priceToCoordinate(profile.stats.minPrice);
-                        
-                        if (yBottomProfile !== null) {
-                            ctx.textAlign = 'left';
-                            ctx.fillStyle = '#DCEDE3'; // Brighter text
-                            
-                            const xStat = drawX; 
-                            const yStatStart = yBottomProfile + 15;
+                    // Draw Standard Lines
+                    if (this._options.showVALines && profile.levels) {
+                        const startLineX = drawX + 1;
 
-                            ctx.font = '12px sans-serif';
-                            //ctx.fillText(`Above: ${profile.stats.above}`, xStat, yStatStart);
-                            //ctx.fillText(`Below: ${profile.stats.below}`, xStat, yStatStart + 12);
-                            const totalText = formatVol(profile.totalVolume);
-                            ctx.fillText(`Total: ${totalText}`, xStat, yStatStart);
+                        let endX = null;
+                        const nextProfile = this._fullData[this._fullData.indexOf(profile) + 1];
+                        if (nextProfile) {
+                            if (nextProfile.anchorIndex !== undefined) 
+                                endX = timeScale.logicalToCoordinate(nextProfile.anchorIndex);
+                            else 
+                                endX = timeScale.timeToCoordinate(nextProfile.time);    
+                        }
+                        // Logic: If next profile coordinate is valid, stop 40px before it.
+                        // If not valid (future), extend to current right edge
+                        if (endX !== null) {
+                            endX = endX - 40; // Padding
+                        } else {
+                            // Current day: Extend to right edge of chart or last bar
+                            endX = startLineX + 300; // fallback width if today
+                        }
+
+                        const drawLevel = (price, color, lineWidth = 1, isDotted = false) => {
+                            const y = this._series.priceToCoordinate(price);
+                            if (y === null) return;
+
+                            ctx.beginPath();
+                            ctx.strokeStyle = color;
+                            ctx.lineWidth = lineWidth;
+
+                            if (isDotted) 
+                                ctx.setLineDash([3, 3]); // 3px dash, 3px gap
+                            else 
+                                ctx.setLineDash([]); // Solid
+
+                            ctx.moveTo(startLineX, y);
+                            ctx.lineTo(endX, y);
+                            ctx.stroke();
+                        };
+
+                        drawLevel(profile.levels.val, this._options.colorVA, 1, true);
+                        drawLevel(profile.levels.vah + rowSize, this._options.colorVA, 1, true);
+                        drawLevel(profile.levels.poc + (rowSize/2), this._options.colorPOC, 2, true);
+                    }
+
+                    // Draw Stats Text
+                    if (this._options.showCounts) {
+                        ctx.font = '10px sans-serif';
+                        ctx.textAlign = 'right';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = '#B2B5BE';
+
+                        if (profile.rows) {
+                            profile.rows.forEach(row => {
+                                const yTop = this._series.priceToCoordinate(row.price + rowSize);
+                                const yBottom = this._series.priceToCoordinate(row.price);
+
+                                if (yBottom === null || yTop === null) return;
+
+                                if (Math.abs(yBottom - yTop) < 6) ctx.font = '4px sans-serif';
+
+                                // Only draw text if rows are tall enough
+                                if (Math.abs(yBottom - yTop) < 2) return;
+
+                                const yMid = (yTop + yBottom) / 2;
+
+                                const volText = Math.round(row.vol).toString();
+
+                                ctx.fillText(volText, drawX - 4, yMid);
+                            });
+                        }
+
+                        if (profile.stats) {
+                            const yBottomProfile = this._series.priceToCoordinate(profile.stats.minPrice);
+                            
+                            if (yBottomProfile !== null) {
+                                ctx.textAlign = 'left';
+                                ctx.fillStyle = '#DCEDE3'; // Brighter text
+                                
+                                const xStat = drawX; 
+                                const yStatStart = yBottomProfile + 15;
+
+                                ctx.font = '12px sans-serif';
+                                //ctx.fillText(`Above: ${profile.stats.above}`, xStat, yStatStart);
+                                //ctx.fillText(`Below: ${profile.stats.below}`, xStat, yStatStart + 12);
+                                const totalText = formatVol(profile.totalVolume);
+                                ctx.fillText(`Total: ${totalText}`, xStat, yStatStart);
+                            }
                         }
                     }
                 }
 
                 // NAKED POC
-                if (this._options.showNakedPOC) {
+                if (this._options.showNakedPOC && profile.levels) {
                     const pocPrice = profile.levels.poc;
                     let touchX = null;
                     let isNaked = true;
@@ -182,7 +177,7 @@ class VPRenderer {
                                 touchX = timeScale.logicalToCoordinate(futureProfile.anchorIndex);
                             else 
                                 touchX = timeScale.timeToCoordinate(futureProfile.time);
-                            
+                                
                             break;
                         }
                     }   
@@ -193,10 +188,11 @@ class VPRenderer {
                         lineEndX = scope.mediaSize.width;
                     }
                     else {
-                        lineEndX = touchX;
+                        // If touchX is null (off screen right), use screen width
+                        lineEndX = touchX !== null ? touchX : scope.mediaSize.width;
                     }
 
-                    if (lineEndX !== null && lineEndX > lineStartX) {
+                    if (lineEndX > lineStartX && lineEndX > 0) {
                         const y = this._series.priceToCoordinate(pocPrice + (rowSize / 2));
                         if(y !== null) {
                             ctx.beginPath();

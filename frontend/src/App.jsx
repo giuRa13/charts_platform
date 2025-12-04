@@ -44,7 +44,6 @@ function App() {
   }, [selectedAsset]);
 
   const handleAddIndicator = (indicatorId) => {
-    
     setIndicators(prev => {
 
       if (indicatorId === "volume") {
@@ -90,13 +89,19 @@ function App() {
             colorNormal: "#5c5c5c",
             colorVA: "#bababa", 
             colorPOC: "#e91c30", 
-            rowSize: 50,
+            rowSize: 20,
             width: 100,
             xOffset: 0
           }];
       }
 
-      return [...prev, { id: indicatorId }];
+      const newIndicator = {
+        id: indicatorId,
+        visible: true,
+      };
+
+      //return [...prev, { id: indicatorId }];
+      return [...prev, newIndicator];
     });
   };
 

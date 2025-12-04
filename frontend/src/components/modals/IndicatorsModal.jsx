@@ -5,7 +5,7 @@ const Indicators = [
     { id: "volume", label: "Volume", upColor: "#2c99c0", downColor: "#be292d" },
     { id: "ema", label: "EMA", length: 20, color: "#c8b914", lineWidth: 2 },
     { id: "cvd", label: "CVD" },
-    { id: "svp", label: "Session Volume Profile", width: 100, rowSize: 50, xOffset: 0 },
+    { id: "svp", label: "Session Volume Profile", width: 100, rowSize: 20, xOffset: 0 },
     { id: "tpo", label: "TPO (Market Profile)", color: "rgba(41, 98, 255, 0.6)", blockSize: 10 },
 ];
 

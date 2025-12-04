@@ -11,6 +11,7 @@ import Clock from "./Clock";
 import { GripVertical, Settings, TrendingUpDown, Info, StepBack, Slash, MoveHorizontal, Eye, EyeOff } from "lucide-react";
 import { Square, MousePointer2, Trash2, ArrowRight, X } from "lucide-react";
 import useDraggable from "../hooks/useDraggable";
+import AssetBadge from "./Assetbadge";
 
 
 const Chart = ({
@@ -40,8 +41,6 @@ const Chart = ({
     const [tpoPopover, setTpoPopover] = useState(null);
 
     const [loading, setLoading] = useState(false);
-
-    const [showCandles, setShowCandles] = useState(true);
 
     // Drawings ////////////////////////////////////////////////////////////////////////////////
     const [drawingSettingsOpen, setDrawingSettingsOpen] = useState(false);
@@ -90,27 +89,6 @@ const Chart = ({
     const toolbarRef = useRef(null);
     const toolbarHandleRef = useRef(null);
     useDraggable(toolbarHandleRef, toolbarRef);
-
-    const parseSymbol = (symbol) => {
-        if (!symbol) return { base: "", quote: "" };
-        
-        const knownQuotes = ["USDT", "USDC", "BUSD", "TUSD", "USD", "EUR", "BTC", "ETH", "BNB"];
-        
-        for (const quote of knownQuotes) {
-            if (symbol.endsWith(quote)) {
-                return {
-                    base: symbol.slice(0, -quote.length),
-                    quote: quote
-                };
-            }
-        }
-        
-        // Fallback if unknown quote (e.g. for some unique pairs)
-        return { base: symbol, quote: "" };
-    };
-
-    const { base, quote } = parseSymbol(selectedAsset);
-    const logoUrl = base ? `https://assets.coincap.io/assets/icons/${base.toLowerCase()}@2x.png` : "";
 
     // create chart once //////////////////////////////////////////////////////////
     useEffect(() => {
@@ -284,16 +262,16 @@ const Chart = ({
         
     }, [renderDrawings]);
 
-    // toggle price candles visibility
-    useEffect(() => {
-        if (priceSeriesRef.current) {
-            priceSeriesRef.current.applyOptions({
-                visible: showCandles
-            });
-        }
-    }, [showCandles]);
 
     /// Indicators ////////////////////////////////////////////////////////////////////////
+
+    // toggle visibility
+    const handleToggleVisibility = (index) => {
+        const newindicators = [...indicators];
+        newindicators[index].visible = !newindicators[index].visible;
+        onIndicatorsChange(newindicators);
+    };
+
     const openEMAsettings = (indicator) => {
         setEditingIndicator(indicator);
         setEMAsettingsOpen(true);
@@ -416,7 +394,8 @@ const Chart = ({
             {chartSettings.showClock && (
                 <Clock color={chartSettings.clockColor}/>
             )}
-            {/* --- TPO FLOAT BUTTON --- */}
+
+            {/* --- TPO FLOAT TOOLTIP/BUTTON --- */}
             {tpoPopover && (
                 <div className="absolute z-50 bg-(--gray) border border-(--graphite) shadow-xl rounded-sm p-3 w-48 
                 flex flex-col gap-2 animate-in zoom-in-95 duration-100"
@@ -469,68 +448,55 @@ const Chart = ({
                     </button>
                 </div>
             )}
-            {/* 1. ASSET INFO BADGE */}
-                <div className="absolute top-2 left-4 z-45 flex items-center gap-2 px-3 py-2 bg-(--black)/20 border border-(--graphite) rounded-sm shadow-md">
-                    {logoUrl ? (
-                        <img 
-                            src={logoUrl} 
-                            alt={base} 
-                            className="w-5 h-5 rounded-full"
-                            onError={ (e) => {
-                                e.target.style.display = 'none';
-                                e.target.parentElement.innerText = base[0]; // Fallback to letter
-                            }}
-                        />
-                    ): (
-                        <span className="text-xs font-bold text-gray-400">{base ? base[0] : "?"}</span>
-                    )}    
-                    <div className="flex items-center gap-2 font-semibold leading-none">
-                        <span>{base} / {quote}</span>
-                        <span className="text-[10px] text-white bg-(--red) p-1 mx-2 rounded-sm">{timeframe}</span>
-                    </div>
-                    <span className="text-xs font-mono">BINANCE • SPOT</span>
-                    <div className="w-px h-6 bg-gray-600 mx-4"></div>
-                    <button onClick={() => setShowCandles(!showCandles)}
-                    className="hover:text-(--red) mr-3">
-                        {showCandles ? <Eye size={16}/> : <EyeOff size={16}/>}
-                    </button>
-                </div>
+
+                <AssetBadge 
+                selectedAsset={selectedAsset} 
+                timeframe={timeframe} 
+                priceSeriesRef={priceSeriesRef}
+                />
+
+                {/* INDICATORS BADGES */}
                 {indicators.length > 0 && (
                 <div className="absolute top-12 left-0 text-sm px-4 py-1 z-40">
                 {/*<span className="flex items-center px-4 py-1 bg-(--black)/20 shadow-md rounded-sm border border-(--graphite) mb-1">
                     Indicators : 
                 </span>*/}
                     {indicators.map((ind, i) => (
-                        <div key={i} className="flex items-center justify-between px-4 py-1 bg-(--black)/20 rounded-sm border border-(--graphite) shadow-md mb-1">
+                        <div key={i} className="flex items-center justify-between gap-26 px-4 py-1 bg-(--black)/20 rounded-sm border border-(--graphite) shadow-md mb-1">
                             <div className="flex gap-2 items-center">
                                 <span>{ind.id.toUpperCase()}{ind.length ? ind.length : ""}</span>
                                 {ind.color && (
                                     <div className="w-3 h-3 rounded-sm border border-(--gray)"
                                     style={{backgroundColor: ind.color}}/>
                                 )}
-                                </div>
+                            </div>
                             <div className="flex gap-2 items-center ml-8">
+                                <button onClick={() => handleToggleVisibility(i)}
+                                title={ind.visible === false ? "Show" : "Hide"}
+                                className="hover:text-(--red) cursor-pointer">
+                                    {ind.visible === false ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
+                                </button>
                                 {ind.id == "volume" && (
-                                    <button onClick={() => openVolumeSettings(ind)} className="hover:text-(--red) cursor-pointer">
+                                    <button onClick={() => openVolumeSettings(ind)} className="hover:text-(--red) cursor-pointer" title="Settings">
                                         <Settings className="w-4 h-4"/>
                                     </button>
                                 )}
                                 {ind.id == "ema" && (
-                                    <button onClick={() => openEMAsettings(ind)} className="hover:text-(--red) cursor-pointer">
+                                    <button onClick={() => openEMAsettings(ind)} className="hover:text-(--red) cursor-pointer" title="Settings">
                                         <Settings className="w-4 h-4"/>
                                     </button>
                                 )}
                                 {ind.id == "tpo" && (
-                                    <button onClick={() => onOpenTPOSettings(ind)} className="hover:text-(--red) cursor-pointer">
+                                    <button onClick={() => onOpenTPOSettings(ind)} className="hover:text-(--red) cursor-pointer" title="Settings">
                                         <Settings className="w-4 h-4"/>
                                     </button>
                                 )}
                                 {ind.id == "svp" && (
-                                    <button onClick={() => onOpenSVPSettings(ind)} className="hover:text-(--red) cursor-pointer">
+                                    <button onClick={() => onOpenSVPSettings(ind)} className="hover:text-(--red) cursor-pointer" title="Settings">
                                         <Settings className="w-4 h-4"/>
                                     </button>
                                 )}
-                                <button onClick={() => onRemoveIndicator(ind)} className="hover:text-(--red) cursor-pointer">
+                                <button onClick={() => onRemoveIndicator(ind)} className="hover:text-(--red) cursor-pointer" title="Remove">
                                     <X className="w-4 h-4"/>
                                 </button>
                             </div>
@@ -538,6 +504,7 @@ const Chart = ({
                     ))}
                 </div>
                 )}
+
                 <canvas
                 ref={canvasRef}
                 className="absolute top-0 left-0 z-20"
@@ -547,28 +514,34 @@ const Chart = ({
             </div>
 
             <div ref={toolbarRef} className="fixed top-20 left-1/2 transform -translate-x-1/2 z-45 flex gap-2 bg-(--gray) border-3 border-(--graphite) p-1 rounded-sm shadow-lg items-center">
-                <div ref={toolbarHandleRef} className="ml-2 cursor-grab active:cursor-grabbing">
+                <div ref={toolbarHandleRef} 
+                className="ml-2 cursor-grab active:cursor-grabbing text-(--text)/40 hover:text-(--text)">
                     <GripVertical size={18}/>
                 </div>
-                <div className="w-px h-6 bg-gray-600 mx-1"></div>
+                <div className="w-px h-6 bg-gray-600 mx-1"></div>           
                 <button onClick={() => setCurrentTool(null)}
+                title="Pointer"
                 className={`p-2 rounded hover:bg-(--primary)/40 ${!currentTool ? 'bg-(--primary)' : ''}`}>
                     <MousePointer2 size={18} />
                 </button>
                 <button onClick={() => setCurrentTool('line')}
+                title="Line"
                 className={`p-2 rounded hover:bg-(--primary)/40 ${currentTool === 'line' ? 'bg-(--primary)' : ''}`}>
                     <Slash size={18} />
                 </button>
                 <button onClick={() => setCurrentTool('ray')}
-                    className={`p-2 rounded hover:bg-(--primary)/40 ${currentTool === 'ray' ?'bg-(--primary)' : ''}`}>
+                title="Ray"
+                className={`p-2 rounded hover:bg-(--primary)/40 ${currentTool === 'ray' ?'bg-(--primary)' : ''}`}>
                     <MoveHorizontal size={18} />
                 </button>
                 <button onClick={() => setCurrentTool('rect')}
+                title="Rect"
                 className={`p-2 rounded hover:bg-gray-700 ${currentTool === 'rect' ? 'bg-(--primary)' : ''}`}>
                     <Square size={18} />
                 </button>
                  <div className="w-px h-6 bg-gray-600 mx-1"></div>
                 <button onClick={() => { setDrawings([]); requestAnimationFrame(renderDrawings); }}
+                title="Delete All"
                 className="p-2 rounded hover:bg-(--red)/40 hover:text-(--red)">
                     <Trash2 size={18} />
                 </button>            

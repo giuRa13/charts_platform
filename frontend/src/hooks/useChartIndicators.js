@@ -33,6 +33,10 @@ export const useChartIndicators = (
                 
                 series.priceScale("right").applyOptions({ scaleMargins: { top: 0, bottom: 0 } });
             }
+
+            seriesMapRef.current.volume.applyOptions({
+                visible: volumeIndicator.visible !== false // Default true
+            });
             
             // Update Data/Colors
             seriesMapRef.current.volume.setData(
@@ -70,6 +74,7 @@ export const useChartIndicators = (
                 seriesMapRef.current[key].applyOptions({ 
                     color: ind.color,
                     lineWidth: ind.lineWidth || 2,
+                    visible: ind.visible !== false,
                 }); 
             }
         });
@@ -87,6 +92,11 @@ export const useChartIndicators = (
 
         // --- TPOs MANAGE ---
         const tpoIndicator = indicators.find(ind => ind.id === "tpo");
+        if (tpoIndicator && seriesMapRef.current.tpo) {
+            seriesMapRef.current.tpo.applyOptions({
+                visible: tpoIndicator.visible !== false
+            });
+        }
 
          if (tpoIndicator) {
            if (!seriesMapRef.current.tpo) {
@@ -142,6 +152,11 @@ export const useChartIndicators = (
 
         // --- VP MANAGE ---
         const vpIndicator = indicators.find(ind => ind.id === "svp");
+        if (vpIndicator && seriesMapRef.current.vp) {
+            seriesMapRef.current.vp.applyOptions({
+                visible: vpIndicator.visible !== false
+            });
+        }
         if (vpIndicator) {
             if (!seriesMapRef.current.vp) {
                 const seriesInstance = new VPSeries(chart);
