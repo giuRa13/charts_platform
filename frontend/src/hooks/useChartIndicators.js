@@ -117,20 +117,24 @@ export const useChartIndicators = (
 
             const blockSize = Number(tpoIndicator.blockSize) || 50;
             const blockWidth = Number(tpoIndicator.blockWidth) || 6;
-            const tpoData = prepareTPOData(candlesRef.current, blockSize);
+            const singlePrintLimit = Number(tpoIndicator.singlePrintLimit) || 1;
+            const tpoData = prepareTPOData(candlesRef.current, blockSize, singlePrintLimit);
 
             // 4. Update Options
             seriesMapRef.current.tpo.applyOptions({
                 colorNormal: tpoIndicator.colorNormal || "#00378f",
                 colorVA: tpoIndicator.colorVA || "#bababa" ,
                 colorPOC: tpoIndicator.colorPOC || "#db8d1f",
+                colorSingles: tpoIndicator.colorSingles || "#ff99eb",
                 blockSize: blockSize,
                 blockWidth: blockWidth,
                 colorText: tpoIndicator.colorText || "#B2B5BE",
                 showCounts: tpoIndicator.showCounts !== false,
                 showLines: tpoIndicator.showLines !== false,
                 expand: tpoIndicator.expand === true,
-                showNakedPOC: tpoIndicator.showNakedPOC === true
+                showNakedPOC: tpoIndicator.showNakedPOC === true,
+                showSingles: tpoIndicator.showSingles === true,
+                singlePrintLimit: singlePrintLimit
             });
 
             // 5. Standard API Data Set (Required for AutoScale)
@@ -234,8 +238,9 @@ export const updateLiveIndicators = (seriesMap, indicators, candles) => {
 
         const tpoConfig = indicators.find(i => i.id === "tpo");
         const blockSize = Number(tpoConfig?.blockSize) || 50;
+        const singlePrintLimit = Number(tpoConfig.singlePrintLimit) || 1;
 
-        const tpoData = prepareTPOData(candles, blockSize);
+        const tpoData = prepareTPOData(candles, blockSize, singlePrintLimit);
         // pdate Series (API Wrapper)
         seriesMap.tpo.setData(tpoData);
         // update custom renderer
@@ -286,7 +291,8 @@ export const setIndicatorsData = (seriesMap, indicators, history) => {
     if (seriesMap.tpo) {
         const tpoConfig = indicators.find(i => i.id === "tpo");
         const blockSize = Number(tpoConfig?.blockSize) || 10;
-        const tpoData = prepareTPOData(history, blockSize);
+        const singlePrintLimit = Number(tpoConfig.singlePrintLimit) || 1;
+        const tpoData = prepareTPOData(history, blockSize, singlePrintLimit);
         
         seriesMap.tpo.setData(tpoData);
         

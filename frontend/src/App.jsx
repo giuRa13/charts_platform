@@ -79,6 +79,7 @@ function App() {
             showLines: true,
             expand: false,
             showNakedPOC: false,
+            colorSingles: "#ff99eb", 
           }];
       }
 

@@ -46,6 +46,29 @@ class TPORenderer {
                 // If expanded, calculate X per block, but check day visibility first to optimize
                 if (!isExpanded && dayStartX === null) return;
 
+                // Draw Single Prints Highlight (Background) 
+                if (this._options.showSingles && !isExpanded && dayProfile.singlePrints) { 
+                    ctx.save(); 
+                    ctx.globalAlpha = 0.35; // Force 35% Opacity
+                    ctx.fillStyle = this._options.colorSingles || "#ff99eb";
+                    // Calculate width of the whole profile to extend the bar
+                    const profileWidth = (dayProfile.maxStack || 8) * blockPixelWidth;
+
+                    dayProfile.singlePrints.forEach(price => {
+                        const yTop = this._series.priceToCoordinate(price + blockSize);
+                        const yBottom = this._series.priceToCoordinate(price);
+                        
+                        if (yBottom === null || yTop === null) return;
+                        let height = Math.abs(yBottom - yTop);
+                        if (height < 1) height = 1;
+                        const drawY = Math.min(yTop, yBottom);
+
+                        // Draw a bar across the profile width
+                        ctx.fillRect(dayStartX, drawY, profileWidth, height);
+                    });
+                    ctx.restore();// end transparency
+                }
+
                 const levelCounts = {};
 
                 // 2. Draw Blocks
@@ -295,6 +318,8 @@ export class TPOSeries {
             showLines: true,
             expand: false, // Global setting
             showNakedPOC: false,
+            showSingles: false,
+            colorSingles: "#ff99eb",
             lastValueVisible: false,
             priceLineVisible: false
         };

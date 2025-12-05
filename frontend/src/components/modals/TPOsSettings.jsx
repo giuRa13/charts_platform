@@ -15,6 +15,9 @@ const TPOsSettings = ({ open, onClose, initial, onSave }) => {
         showLines: true,
         expand: false,
         showNakedPOC: false,
+        colorSingles: "#ff99eb", 
+        showSingles: false,
+        singlePrintLimit: 1,
     }, [initial]);
 
     const [colorNormal, setColorNormal] = useState(safeInitial.colorNormal || "#00378f");
@@ -27,6 +30,9 @@ const TPOsSettings = ({ open, onClose, initial, onSave }) => {
     const [showLines, setShowLines] = useState(safeInitial.showLines !== false);
     const [expand, setExpand] = useState(safeInitial.expand || false);
     const [showNakedPOC, setShowNakedPOC] = useState(safeInitial.showNakedPOC || false);
+    const [showSingles, setShowSingles] = useState(safeInitial.showSingles || false);
+    const [colorSingles, setColorSingles] = useState(safeInitial.colorSingles || "#ff99eb");
+    const [singlePrintLimit, setSinglePrintLimit] = useState(safeInitial.singlePrintLimit || 1);
 
     React.useEffect(() => {
         setColorNormal(safeInitial.colorNormal || "#00378f");
@@ -39,6 +45,9 @@ const TPOsSettings = ({ open, onClose, initial, onSave }) => {
         setShowLines(safeInitial.showLines !== false);
         setExpand(safeInitial.expand || false);
         setShowNakedPOC(safeInitial.showNakedPOC || false);
+        setShowSingles(safeInitial.showSingles || false);
+        setColorSingles(safeInitial.colorSingles || "#ff99eb");
+        setSinglePrintLimit(safeInitial.singlePrintLimit || 1);
     }, [safeInitial]);
 
     const handleSave = () => {
@@ -53,7 +62,10 @@ const TPOsSettings = ({ open, onClose, initial, onSave }) => {
             showCounts,
             showLines,
             expand,
-            showNakedPOC
+            showNakedPOC,
+            showSingles,
+            colorSingles,
+            singlePrintLimit: Number(singlePrintLimit),
         });
         onClose();
     };
@@ -153,6 +165,32 @@ const TPOsSettings = ({ open, onClose, initial, onSave }) => {
                         onChange={(e) => setShowCounts(e.target.checked)} 
                     />
                 </div>
+
+                {/* Single Prints */}
+                <div className='flex items-center justify-between'>
+                    <label className='text-sm'>Highlight Single Prints</label>
+                    <input type="checkbox" checked={showSingles} onChange={(e) => setShowSingles(e.target.checked)} />
+                </div>
+                {showSingles && (
+                    <>
+                    <div className='flex items-center justify-between pl-4'>
+                        <label className='text-xs text-gray-400'>Min Consecutive Rows</label>
+                        <input 
+                            type="number" 
+                            min="1" 
+                            value={singlePrintLimit} 
+                            onChange={(e) => setSinglePrintLimit(e.target.value)} 
+                            className='w-20 bg-[#161616] text-white px-2 py-1 border border-(--primary) outline-none text-right'
+                        />
+                    </div>
+                    <div className='flex items-center justify-between pl-4'>
+                        <label className='text-xs text-gray-400'>Singles Color</label>
+                        <input type='color' 
+                        value={colorSingles} 
+                        onChange={(e) => setColorSingles(e.target.value)} 
+                        className='h-8 w-8 cursor-pointer rounded-md border-4 border-(--graphite) hover:border-(--primary)'/>
+                    </div>
+                </>)}
 
                 <div className='flex items-center justify-end'>
                     <button onClick={() => defaultColors()}

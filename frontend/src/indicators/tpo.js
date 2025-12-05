@@ -9,10 +9,11 @@
  * 5. Return a structure that tells us where to draw blocks.
  */
 
-export function prepareTPOData(candles, blockSizeInput = 50) {
+export function prepareTPOData(candles, blockSizeInput = 50, singlePrintLimitInput = 1) {
     if (!candles || candles.length === 0) return [];
 
     const blockSize = Number(blockSizeInput) || 50;
+    const singlePrintLimit = Number(singlePrintLimitInput) || 1;
     const tpoData = {}; 
 
     // 1. Group Data by Day and calculate Slots
@@ -54,6 +55,9 @@ export function prepareTPOData(candles, blockSizeInput = 50) {
         const priceCounts = {}; // Key: Price, Value: Count of TPOs
         let totalTPOs = 0;
 
+        // Track Max Stack for this day (Widest row)
+        let maxStackSize = 0; 
+
         Object.entries(dayProfile.slots).forEach(([slotIdx, range]) => {
             // Use Integer Indices to avoid Floating Point errors
             const minIndex = Math.floor(range.low / blockSize); //  convert the price range into Grid Steps
@@ -81,6 +85,10 @@ export function prepareTPOData(candles, blockSizeInput = 50) {
 
                 priceCounts[price] = (priceCounts[price] || 0) + 1;
                 totalTPOs++;
+
+                if (priceCounts[price] > maxStackSize) {
+                    maxStackSize = priceCounts[price];
+                }
             }
         });
 
@@ -148,6 +156,26 @@ export function prepareTPOData(candles, blockSizeInput = 50) {
         const vaArray = Array.from(valueAreaPrices);
         const val = Math.min(...vaArray);
         const vah = Math.max(...vaArray);
+
+        // Single Prints
+        const singlePrintPrices = [];
+        let currentSequence = [];
+        for (let i = 0; i < levels.length; i++) {
+            const p = levels[i];
+            
+            if (priceCounts[p] === 1) {
+                currentSequence.push(p);
+            } else {
+                if (currentSequence.length >= singlePrintLimit) {
+                    singlePrintPrices.push(...currentSequence);
+                }
+                currentSequence = [];
+            }
+        }
+        // Check if the last sequence (at the very top) meets criteria
+        if (currentSequence.length >= singlePrintLimit) {
+            singlePrintPrices.push(...currentSequence);
+        }
         
         return {
             time: dayProfile.time,
@@ -155,6 +183,8 @@ export function prepareTPOData(candles, blockSizeInput = 50) {
             blocks: finalBlocks,
             rowCounts: priceCounts,
             levels: { poc: pocPrice, val, vah }, 
+            singlePrints: singlePrintPrices, // Export for renderer
+            maxStack: maxStackSize, // Export for renderer width
             stats: { 
                 above: countAbove, 
                 below: countBelow,
