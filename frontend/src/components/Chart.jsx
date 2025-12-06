@@ -22,7 +22,11 @@ const Chart = ({
     onIndicatorsChange, 
     chartSettings,
     onOpenTPOSettings,
-    onOpenSVPSettings
+    onOpenSVPSettings,
+    //offline
+    isOffline,     
+    offlineData,   
+    offlineSymbol,
 }) => {
 
     const chartContainer = useRef();
@@ -78,7 +82,8 @@ const Chart = ({
     };
     /////////////////////////////////////////////////////////////////////////////////////////////
 
-    useEffect(() => { //sync ref with state
+    //sync ref with state
+    useEffect(() => { 
         indicatorsRef.current = indicators;
     }, [indicators]);
 
@@ -178,21 +183,35 @@ const Chart = ({
     };
 
     // load history + open websocket when symbol/timeframe change //////////////////////////////
-    useEffect(() => {
-        if (!selectedAsset || !timeframe || !chartRef.current) return;
+    React.useEffect(() => {
+        if (!chartRef.current) return;
 
         let isMounted = true;
-        Promise.resolve().then(() => {
-            if (isMounted) setLoading(true);
-        });
+        setLoading(true);
 
-        const chart = chartRef.current;
-
-        // Clear price & indicator data (safe even if seriesMap is empty)
+        // 1. Clear old data
         try { priceSeriesRef.current.setData([]); } catch (e) {console.log(e)}
-        Object.values(seriesMapRef.current).forEach(s => {
-            try { s.setData([]); } catch (e) {console.log(e)}
-        });
+        Object.values(seriesMapRef.current).forEach(s => { try { s.setData([]); } catch (e) {console.log(e)} });
+        candlesRef.current = [];
+
+         // 2A. OFFLINE MODE
+        if (isOffline && offlineData.length > 0) {
+            candlesRef.current = offlineData;
+            priceSeriesRef.current.setData(offlineData);
+            
+            setIndicatorsData(seriesMapRef.current, indicatorsRef.current, offlineData);
+
+            chartRef.current.priceScale('right').applyOptions({ autoScale: true });
+            chartRef.current.timeScale().fitContent();
+            setLoading(false);
+            return; // STOP HERE
+        }
+
+        // 2B. ONLINE MODE
+        if (!selectedAsset || !timeframe) {
+            setLoading(false);
+            return;
+        }
 
         fetch(`http://localhost:3001/history/${selectedAsset}/${timeframe}`)
         .then(r => r.json())
@@ -200,21 +219,13 @@ const Chart = ({
             if (!isMounted) return;
             candlesRef.current = history;
             priceSeriesRef.current.setData(history);
-            
             setIndicatorsData(seriesMapRef.current, indicatorsRef.current, history);
 
-            chart.priceScale('right').applyOptions({
-                autoScale: true, // Unlock if user dragged it
-            });
-
-            chart.timeScale().fitContent();
+            chartRef.current.priceScale('right').applyOptions({ autoScale: true });
+            chartRef.current.timeScale().fitContent();
         })
-        .catch(err => {
-            console.error("History fetch error:", err);
-        })
-        .finally(() => {
-            if (isMounted) setLoading(false);
-        });
+        .catch(err => console.error("History fetch error:", err))
+        .finally(() =>{ if (isMounted) setLoading(false); });
 
         // Reset websocket
         wsRef.current = new WebSocket(`ws://localhost:3001?symbol=${selectedAsset}&timeframe=${timeframe}`);
@@ -229,7 +240,7 @@ const Chart = ({
             }
         };
 
-    }, [selectedAsset, timeframe]);
+    }, [selectedAsset, timeframe, isOffline, offlineData]);
 
     // handles Window Resize, Panel Resize, and Dragging automatically
     useEffect(() => {
@@ -453,6 +464,8 @@ const Chart = ({
                 selectedAsset={selectedAsset} 
                 timeframe={timeframe} 
                 priceSeriesRef={priceSeriesRef}
+                isOffline={isOffline}
+                offlineSymbol={offlineSymbol}
                 />
 
                 {/* INDICATORS BADGES */}

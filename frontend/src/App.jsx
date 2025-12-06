@@ -7,11 +7,15 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import IndicatorsModal from "./components/modals/IndicatorsModal";
 import ChartSettings from "./components/modals/ChartSettings";
 import TPOsSettings from "./components/modals/TPOsSettings";
-import { Menu } from "lucide-react";
-import { Settings } from "lucide-react";
+import { Menu, Settings  } from "lucide-react";
 import SVPSettings from "./components/modals/SVPSettings";
 
+
 function App() {
+  const [isOffline, setIsOffline] = useState(false);
+  const [offlineData, setOfflineData] = useState([]);
+  const [offlineSymbol, setOfflineSymbol] = useState("");
+
   const [assetsList, setAssetsList] = useState([]);
   const [selectedAsset, setSelectedAsset] = useState("BTCUSDT");
   const [timeframe, setTimeframe] = useState("1m");
@@ -133,6 +137,18 @@ function App() {
       .catch(err => console.error("Failed to fetch assets:", err));
   }, []);
 
+  const handleOfflineLoad = (data, fileName) => {
+      setOfflineData(data);
+      setOfflineSymbol(fileName);
+      setIsOffline(true);
+  };
+
+  const handleExitOffline = () => {
+      setIsOffline(false);
+      setOfflineData([]);
+      // Optionally reset asset or keep current
+  };
+
   return (
     <div className="w-screen h-screen flex flex-col bg-(--gray) text-(--text)">
 
@@ -181,6 +197,10 @@ function App() {
         timeframe={timeframe}
         onSelectTimeframe={setTimeframe}
         onOpenIndicators={() => setShowIndicators(true)}
+        //offline props
+        isOffline={isOffline}
+        onImportData={handleOfflineLoad}
+        onExitOffline={handleExitOffline}
       />
 
       {/* Main content */}
@@ -198,7 +218,11 @@ function App() {
             onOpenTPOSettings={() => setTpoSettingsOpen(true)} 
             onOpenSVPSettings={() => setSvpSettingsOpen(true)} 
             onIndicatorsChange={setIndicators}
-            chartSettings={chartConfig}/>
+            chartSettings={chartConfig}
+            //offline props
+            isOffline={isOffline}
+            offlineData={offlineData}
+            offlineSymbol={offlineSymbol}/>
         </div>
         </Panel>
 
