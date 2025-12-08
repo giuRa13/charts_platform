@@ -1,0 +1,25 @@
+**/node_modules/
+**/venv/
+**/.venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+backend/core-api-service/data/*.db
+backend/core-api-service/data/*.sqlite
+*.db
+
+# TimescaleDB/Postgres Data Volume
+# This folder is created by Docker on your host. 
+#backend/timescaledb_data/
+
+.env
+**/.env
+.DS_Store
+
+*.log
+**/dist/
+**/build/
+npm-debug.log*
+
+backend/core-api-service/scripts/config.py

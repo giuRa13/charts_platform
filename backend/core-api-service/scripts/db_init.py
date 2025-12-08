@@ -1,6 +1,7 @@
-import sqlite3
+import sqlite3, os
 
-DB = "app.db"
+#DB = "app.db"
+DB = os.getenv("DB_PATH", "data/app.db")
 
 def init():
     conn = sqlite3.connect(DB)

@@ -1,8 +1,0 @@
-node_modules/
-#package.json
-#package-lock.json
-
-scripts/__pycache__/
-scripts/config.py
-
-app.db

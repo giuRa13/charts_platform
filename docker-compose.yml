@@ -1,0 +1,22 @@
+# This file allows you to run everything with one command. 
+# It also handles Volumes so that your SQLite database (app.db) is not deleted when you restart the server
+# docker-compose up --build
+
+services:
+  core-api-service:
+    build: ./backend/core-api-service
+    container_name: core-api
+    ports:
+      - "3001:3001"
+    volumes:
+      # Map the local 'data' folder to the container
+      - ./backend/core-api-service/data:/app/data 
+      # Optional: Map scripts so you can edit python without rebuilding
+      - ./backend/core-api-service/scripts:/app/scripts
+      # Hot-reload: Map the source code so you don't have to rebuild on every change
+      - ./backend/core-api-service:/app
+      # IGNORE node_modules: Use the container's installed modules, not your local ones
+      - /app/node_modules
+    environment:
+      - DB_PATH=/app/data/app.db
+      - NODE_ENV=development

@@ -1,0 +1,8 @@
+node_modules
+__pycache__
+*.pyc
+*.pyo
+.git
+.env
+data
+#This tells Docker: "When you build the image, ignore these files on my computer. Create fresh ones inside the container."

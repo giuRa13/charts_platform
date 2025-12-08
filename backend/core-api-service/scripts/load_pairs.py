@@ -1,7 +1,8 @@
 import sqlite3
-import requests
+import requests, os
 
-DB = "app.db"
+#DB = "app.db"
+DB = os.getenv("DB_PATH", "data/app.db")
 
 def populate_assets_table():
     """Fetch all active Binance symbols and populate the assets table."""

@@ -1,8 +1,9 @@
-import sqlite3, sys, time
+import sqlite3, sys, time, os
 from binance.client import Client
 from config import API_KEY, API_SECRET
 
-DB = "app.db"
+#DB = "app.db"
+DB = os.getenv("DB_PATH", "data/app.db")
 client = Client(API_KEY, API_SECRET)
 TIMEOUT = 30 
 # if Node.js server is currently writing to the DB, Python will wait up to 30 seconds for the lock to release instead of crashing immediately

@@ -1,7 +1,8 @@
 const sqlite3 = require("sqlite3");
 const path = require("path");
 
-const DB_PATH = path.join(__dirname, "app.db");
+//const DB_PATH = path.join(__dirname, "app.db");
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'app.db');
 // Set a busy timeout so Node waits if Python is writing
 const db = new sqlite3.Database(DB_PATH);
 db.configure("busyTimeout", 5000); 
