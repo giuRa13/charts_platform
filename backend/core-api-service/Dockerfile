@@ -9,8 +9,8 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 WORKDIR /app
 
-COPY requirement.txt .
-RUN pip install -r requirement.txt 
+COPY requirements.txt .
+RUN pip install -r requirements.txt 
 
 # Copy Node.js dependencies and install them
 COPY package*.json ./

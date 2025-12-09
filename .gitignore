@@ -11,7 +11,7 @@ backend/core-api-service/data/*.sqlite
 
 # TimescaleDB/Postgres Data Volume
 # This folder is created by Docker on your host. 
-#backend/timescaledb_data/
+backend/timescaledb_data/
 
 .env
 **/.env
