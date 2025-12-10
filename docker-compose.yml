@@ -17,20 +17,8 @@ services:
     environment:
       - DB_PATH=/app/data/app.db
       - NODE_ENV=development
-
-  timescaledb:
-    image: timescale/timescaledb:latest-pg17
-    container_name: timescaledb
-    restart: always
-    environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=password 
-      - POSTGRES_DB=orderflow_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - timescale_data:/var/lib/postgresql/data
-      #- ./backend/timescaledb_data:/var/lib/postgresql/data
+      - BINANCE_API_KEY=${BINANCE_API_KEY}
+      - BINANCE_API_SECRET=${BINANCE_API_SECRET}
 
   orderflow-engine-service:
     build: ./backend/orderflow-engine-service 
@@ -39,14 +27,32 @@ services:
       - timescaledb # wait for db to start
     volumes:
       - ./backend/orderflow-engine-service:/app
+    ports:
+      - "8000:8000"
     environment:
       - DB_HOST=timescaledb # Docker Hostname
       - DB_PORT=5432
-      - DB_USER=admin
-      - DB_PASS=password
-      - DB_NAME=orderflow_db
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=${DB_NAME}
+      - BINANCE_API_KEY=${BINANCE_API_KEY}
+      - BINANCE_API_SECRET=${BINANCE_API_SECRET}
+  
+  timescaledb:
+    image: timescale/timescaledb:latest-pg17
+    container_name: timescaledb
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+      #- ./backend/timescaledb_data:/var/lib/postgresql/data
 
-# SQLite Viewer (Web Interface)
+  # SQLite Viewer (Web Interface)
   sqlite-web:
     image: coleifer/sqlite-web
     ports:

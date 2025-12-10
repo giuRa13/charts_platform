@@ -1,3 +1,8 @@
+fastapi
+uvicorn[standard]
+websockets
+websocket-client
 psycopg2-binary
 pandas
-websocket-client
+python-binance
+asyncpg

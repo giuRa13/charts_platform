@@ -22,4 +22,5 @@ backend/timescaledb_data/
 **/build/
 npm-debug.log*
 
-backend/core-api-service/scripts/config.py
+.env
+**/.env
