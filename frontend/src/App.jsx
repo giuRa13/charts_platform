@@ -9,9 +9,11 @@ import ChartSettings from "./components/modals/ChartSettings";
 import TPOsSettings from "./components/modals/TPOsSettings";
 import { Menu, Settings  } from "lucide-react";
 import SVPSettings from "./components/modals/SVPSettings";
+import axios from "axios";
 
 
 function App() {
+  const [isProMode, setIsProMode] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [offlineData, setOfflineData] = useState([]);
   const [offlineSymbol, setOfflineSymbol] = useState("");
@@ -149,6 +151,26 @@ function App() {
       // Optionally reset asset or keep current
   };
 
+  // --- Toggle Pro Mode (Start/Stop Ingestor) ---
+  const handleToggleProMode = async () => {
+    const newMode = !isProMode;
+    setIsProMode(newMode);
+
+    try {
+      if (newMode) {
+        await axios.post("http://localhost:8000/ingest/start");
+        console.log("Pro Mode: Ingestor Started");
+      }
+      else {
+        await axios.post("http://localhost:8000/ingest/stop");
+        console.log("Pro Mode: Ingestor Stopped");
+      }
+    }
+    catch (err) {
+      console.error("Failed to toggle Orderflow Engine:", err);
+    }
+  };
+
   return (
     <div className="w-screen h-screen flex flex-col bg-(--gray) text-(--text)">
 
@@ -211,6 +233,7 @@ function App() {
         {/*<div className="flex-1 min-w-0">*/}
          <div className="w-full h-full">
           <Chart 
+            isProMode={isProMode}
             selectedAsset={selectedAsset} 
             timeframe={timeframe} 
             panelOpen={isPanelOpen}
@@ -251,7 +274,11 @@ function App() {
       </PanelGroup>
     </div>
 
-    <BottomBar/>
+    <BottomBar
+    isOffline={isOffline}
+    isProMode={isProMode}      
+    onToggleProMode={handleToggleProMode}
+    />
 
   </div>
   );

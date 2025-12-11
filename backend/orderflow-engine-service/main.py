@@ -1,11 +1,22 @@
 # this starts the ingestor(web socket) on boot and exposes an API endpoint for the frontend to trigger a backfill
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, WebSocket
+from fastapi.middleware.cors import CORSMiddleware 
 from pydantic import BaseModel
 import uvicorn
+import asyncio
 import ingestor
 import historical
+from connection_manager import manager
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins (or use ["http://localhost:5173"])
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow POST, GET, OPTIONS, etc.
+    allow_headers=["*"],  # Allow all headers
+)
 
 # Start Live Data on Boot
 #@app.on_event("startup")
@@ -20,18 +31,32 @@ def home():
         "ingestor_active": ingestor.is_running
     }
 
-# --- CONTROL ENDPOINTS ---
+# --- WEBSOCKET ENDPOINT ---------------------------------
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    # frontend connects here: ws://localhost:8000/ws
+    await manager.connect(websocket)
+    try:
+        while True:
+            # Keep connection alive
+            await websocket.receive_text()
+    except:
+        manager.disconnect(websocket)
+
+# --- CONTROL ENDPOINTS ----------------------------------
 @app.post("/ingest/start")
-def start_ingest(): # Manually start the Binance WebSocket Stream
-    status = ingestor.start_ingestor()
+async def start_ingest(): 
+    # Pass the running event loop to the thread so it can broadcast back
+    loop = asyncio.get_running_loop()
+    status = ingestor.start_ingestor(loop)
     return {"status": status}
 
 @app.post("/ingest/stop")
-def stop_ingest():
+async def stop_ingest():
     status = ingestor.stop_ingestor()
     return {"status": status}
 
-# --- HISTORICAL ---
+# --- HISTORICAL -------------------------------------------
 class AssetRequest(BaseModel):
     symbol: str
 

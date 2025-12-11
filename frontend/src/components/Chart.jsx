@@ -15,6 +15,7 @@ import AssetBadge from "./Assetbadge";
 
 
 const Chart = ({
+    isProMode,
     selectedAsset, 
     timeframe, 
     panelOpen, 
@@ -154,17 +155,37 @@ const Chart = ({
 
     // update price and any active indicator(s) //////////////////////////////////////////////
     const handleRealtime = (msg) => {
-        if (!msg.k) return;
-        const k = msg.k;
+        let candle = null;
 
-        const candle = {
-            time: Math.floor(k.t / 1000),
-            open: +k.o,
-            high: +k.h,
-            low: +k.l,
-            close: +k.c,
-            volume: +k.v,
-        };
+        if (isProMode) {
+            candle = {
+                time: msg.time,
+                open: msg.open,
+                high: msg.high,
+                low: msg.low,
+                close: msg.close,
+                volume: msg.volume,
+            };
+
+            console.log("RICH DATA:", { 
+                delta: msg.delta, 
+                footprintLevels: Object.keys(msg.footprint).length 
+            });
+        }
+        else {
+            if (!msg.k) return;
+            const k = msg.k;
+
+            candle = {
+                time: Math.floor(k.t / 1000),
+                open: +k.o,
+                high: +k.h,
+                low: +k.l,
+                close: +k.c,
+                volume: +k.v,
+            };
+        }
+        if (!candle) return;
 
         let last = candlesRef.current[candlesRef.current.length - 1];
         if (last && last.time === candle.time) {
@@ -180,6 +201,7 @@ const Chart = ({
             indicatorsRef.current, 
             candlesRef.current
         );
+        
     };
 
     // load history + open websocket when symbol/timeframe change //////////////////////////////
@@ -228,7 +250,19 @@ const Chart = ({
         .finally(() =>{ if (isMounted) setLoading(false); });
 
         // Reset websocket
-        wsRef.current = new WebSocket(`ws://localhost:3001?symbol=${selectedAsset}&timeframe=${timeframe}`);
+        let url = "";
+        
+        if (isProMode) {
+            console.log("Connecting to Orderflow Engine (Server B)...");
+            url = "ws://localhost:8000/ws";
+        } else {
+            console.log("Connecting to Standard Proxy (Server A)...");
+            url = `ws://localhost:3001?symbol=${selectedAsset}&timeframe=${timeframe}`;
+        }
+
+        //wsRef.current = new WebSocket(`ws://localhost:3001?symbol=${selectedAsset}&timeframe=${timeframe}`);
+        wsRef.current = new WebSocket(url);
+        wsRef.current.onopen = () => console.log(`Connected to ${isProMode ? "PRO" : "LITE"} stream`);
         wsRef.current.onmessage = (evt) => handleRealtime(JSON.parse(evt.data));
         wsRef.current.onerror = (e) => console.warn("WS error", e);
         
@@ -240,7 +274,7 @@ const Chart = ({
             }
         };
 
-    }, [selectedAsset, timeframe, isOffline, offlineData]);
+    }, [selectedAsset, timeframe, isOffline, offlineData, isProMode]);
 
     // handles Window Resize, Panel Resize, and Dragging automatically
     useEffect(() => {
