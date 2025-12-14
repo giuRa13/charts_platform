@@ -8,8 +8,8 @@ const VolumeSettings = ({
     onSave 
 }) => {
 
-    const defaultUp = "#008080";
-    const defaultDown = "#F33644";
+    const defaultUp = "#74A6E2";
+    const defaultDown = "#AA3A37";
     const [upColor, setUpColor] = useState(initial.upColor || defaultUp);
     const [downColor, setDownColor] = useState(initial.downColor || defaultDown);
 
@@ -53,8 +53,8 @@ const VolumeSettings = ({
         </div>
 
         <div className="flex justify-between gap-2 mt-4">
-            <button onClick={resetDefaults} className="px-3 py-0.5 w-full rounded-sm bg-(--primary) hover:opacity-80 cursor-pointer">Default</button>
-          <button onClick={handleSave} className="px-3 py-0.5 w-full rounded-sm bg-(--primary) hover:opacity-80 w-[50%] cursor-pointer">Save</button>
+            <button onClick={resetDefaults} className="px-3 py-0.5 w-full bg-(--primary) hover:opacity-80 cursor-pointer">Default</button>
+          <button onClick={handleSave} className="px-3 py-0.5 w-full bg-(--primary) hover:opacity-80 cursor-pointer">Save</button>
         </div>
 
       </div>

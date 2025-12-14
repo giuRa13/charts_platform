@@ -6,6 +6,8 @@ import uvicorn
 import asyncio
 import ingestor
 import historical
+import footprint
+import database
 from connection_manager import manager
 
 app = FastAPI()
@@ -18,11 +20,11 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-# Start Live Data on Boot
-#@app.on_event("startup")
-#async def startup_event():
-#    print("🚀 Server B (Orderflow) Starting...")
-#    ingestor.start_ingestor()
+@app.on_event("startup")
+async def startup_event():
+    print("🚀 Server B (Orderflow) Starting...")
+    database.init_db_pool()
+    database.prune_database(days_to_keep=7) 
 
 @app.get("/")
 def home():
@@ -67,9 +69,14 @@ async def load_ticks(req: AssetRequest, background_tasks: BackgroundTasks):
     background_tasks.add_task(historical.load_tick_history, req.symbol, 60)
     return {"status": "Backfill started", "symbol": req.symbol}
 
+@app.get("/history/footprint")
+def history_footprint(symbol: str, timeframe: str = "1m"):
+    # Returns Rich Candles (with Footprint data) from TimescaleDB
+    data = footprint.get_historical_footprints(symbol, timeframe, limit=60)
+    return data
+
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "Orderflow Engine"}
 
 
-# WebSockets for frontend streaming will be added here later

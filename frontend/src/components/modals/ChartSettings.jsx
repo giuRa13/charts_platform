@@ -126,7 +126,7 @@ const ChartSettings = ({ open, onClose, currentSettings, onSave }) => {
                 </div>
 
                 <div className="flex justify-end mt-4">
-                    <button onClick={handleSave} className="px-4 py-0.5 bg-(--primary) w-[50%] rounded-sm hover:opacity-80">
+                    <button onClick={handleSave} className="px-4 py-0.5 bg-(--primary) w-[50%] hover:opacity-80">
                         Apply
                     </button>
                 </div>

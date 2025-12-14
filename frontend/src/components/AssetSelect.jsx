@@ -41,8 +41,8 @@ const AssetSelect = ({options, value, onChange}) => {
                         }}
                         className={`
                             px-3 py-2 cursor-pointer
-                            hover:bg-(--primary) hover:text-black
-                            ${value === opt.value ? "bg-(--red) text-black" : ""}
+                            hover:bg-(--primaryT) hover:text-black
+                            ${value === opt.value ? "bg-(--primary) text-black" : ""}
                         `}>
                             {opt.label}
                         </div>

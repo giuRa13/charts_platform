@@ -51,3 +51,37 @@ def release_db_connection(conn):
         except Exception as e:
             print(f"⚠️ Error releasing connection: {e}")
         
+
+
+# Deletes data older than X days.
+# Uses TimescaleDB's optimized drop_chunks if available.
+def prune_database(days_to_keep=7):
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        print(f"Pruning data older than {days_to_keep} days...")
+
+        # This drops entire file partitions (chunks) (TimescaleDB Native )
+        try:
+            cur.execute(f"SELECT drop_chunks('market_ticks', INTERVAL '{days_to_keep} days');")
+            print("Pruned using drop_chunks.")
+        except Exception as e:
+            # Fallback (Standard Postgres DELETE)
+            # Use this if drop_chunks fails (e.g. older version or permissions)
+            conn.rollback() # Clear error
+            print(f"⚠️ drop_chunks failed ({e}), using standard DELETE...")
+            
+            cur.execute(f"""
+                DELETE FROM market_ticks 
+                WHERE time < NOW() - INTERVAL '{days_to_keep} days';
+            """)
+            print(f"Pruned using DELETE (Rows affected: {cur.rowcount})")
+
+        conn.commit()
+        cur.close()
+    except Exception as e:
+        print(f"Prune Error: {e}")
+        conn.rollback()
+    finally:
+        release_db_connection(conn)
+

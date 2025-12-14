@@ -7,6 +7,7 @@ const Indicators = [
     { id: "cvd", label: "CVD" },
     { id: "svp", label: "Session Volume Profile", width: 100, rowSize: 20, xOffset: 0 },
     { id: "tpo", label: "TPO (Market Profile)", color: "rgba(41, 98, 255, 0.6)", blockSize: 10 },
+    { id: "footprint", label: "Footprint", rowSize: 10, colorText:'#555555'},
 ];
 
 const IndicatorsModal = ({ open, onClose, onSelect }) => {

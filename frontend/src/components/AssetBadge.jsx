@@ -84,7 +84,7 @@ const AssetBadge = ({selectedAsset,  timeframe, priceSeriesRef, isOffline, offli
         <div className="w-px h-6 bg-(--graphite) mx-4"></div>
         <button onClick={() => setShowCandles(!showCandles)}
         title={showCandles ? "Hide Price" : "Show Price"}
-        className="hover:text-(--red) mr-3">
+        className="hover:text-(--primary) mr-3">
             {showCandles ? <Eye size={16}/> : <EyeOff size={16}/>}
         </button>
     </div>

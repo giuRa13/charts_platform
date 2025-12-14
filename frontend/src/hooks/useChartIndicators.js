@@ -6,11 +6,16 @@ import { prepareTPOData } from "../indicators/tpo";
 import { TPOSeries } from "../indicators/tpoSeries";
 import { prepareVPData } from "../indicators/sessionVolumeProfile";
 import { VPSeries } from "../indicators/svpSeries";
+import { prepareFootprintData } from "../indicators/footprint";
+import { FootprintSeries } from "../indicators/footprintSeries";
+
+
 export const useChartIndicators = (
     chartRef, 
     seriesMapRef, 
     indicators, 
-    candlesRef
+    candlesRef,
+    priceSeriesRef
 ) => {
 
     // 1. Logic to Sync Indicators (Add/Remove/Update Settings)
@@ -42,8 +47,8 @@ export const useChartIndicators = (
             seriesMapRef.current.volume.setData(
                 prepareVolumeData(
                     candlesRef.current,
-                    volumeIndicator.upColor || "#2c99c0", 
-                    volumeIndicator.downColor || "#be292d" 
+                    volumeIndicator.upColor || "#74A6E2", 
+                    volumeIndicator.downColor || "#AA3A37"
                 )
             );
         } else {
@@ -200,6 +205,54 @@ export const useChartIndicators = (
             }
         }
 
+        // --- FOOTPRINT MANAGE ---
+        const fpIndicator = indicators.find(ind => ind.id === "footprint");
+
+        if (fpIndicator) {
+            // 1. Hide Standard Candles
+            const isFpVisible = fpIndicator.visible !== false;
+            if (priceSeriesRef.current) {
+                priceSeriesRef.current.applyOptions({ visible: !isFpVisible });
+            }
+
+            // 2. Create Series
+            if (!seriesMapRef.current.fp) {
+                const seriesInstance = new FootprintSeries();
+                const series = chart.addCustomSeries(seriesInstance, {
+                     priceScaleId: 'right' 
+                });
+                seriesInstance.setSeries(series);
+                seriesMapRef.current.fp = series;
+            }
+
+            const rowSize = Number(fpIndicator.rowSize) || 0.5;
+
+            // 3. Prepare Data (Aggregation)
+            const fpData = prepareFootprintData(candlesRef.current, rowSize);
+
+            seriesMapRef.current.fp.setData(fpData);
+            seriesMapRef.current.fp.applyOptions({
+                rowSize: rowSize,
+                colorText: fpIndicator.colorText || "#FFFFFF",
+                maxBars: Number(fpIndicator.maxBars) || 20, 
+                showPOC: fpIndicator.showPOC !== false,
+                colorPOC: fpIndicator.colorPOC || "#FFFF00",
+                alphaContrast: fpIndicator.alphaContrast,
+                visible: isFpVisible
+            });
+        }
+        else {
+            // Remove Footprint
+            if (seriesMapRef.current.fp) {
+                chart.removeSeries(seriesMapRef.current.fp);
+                delete seriesMapRef.current.fp;
+            }
+            // Show Standard Candles again
+            if (priceSeriesRef.current) {
+                priceSeriesRef.current.applyOptions({ visible: true });
+            }
+        }
+
     }, [indicators]); // Re-run when indicators change
 };
 
@@ -212,8 +265,8 @@ export const updateLiveIndicators = (seriesMap, indicators, candles) => {
         updateLastVolume(
             seriesMap.volume,
             candles,
-            volConfig?.upColor || "#2c99c0",
-            volConfig?.downColor || "#be292d" 
+            volConfig?.upColor || "#74A6E2",
+            volConfig?.downColor || "#AA3A37" 
         );
     }
 
@@ -263,6 +316,16 @@ export const updateLiveIndicators = (seriesMap, indicators, candles) => {
         if (seriesMap.vp._customInstance)
             seriesMap.vp._customInstance.setFullData(vpData);
     }
+
+    // FOOTPRINT 
+    if (seriesMap.fp) {
+        const fpConfig = indicators.find(i => i.id === "footprint");
+        const rowSize = Number(fpConfig?.rowSize) || 0.5;
+        const fpData = prepareFootprintData(candles, rowSize);
+        
+        seriesMap.fp.setData(fpData);
+        // Note: Footprint doesn't use setFullData because it maps 1:1 to bars
+    }
 };
 
 // 3. Logic to Set Initial Data (After Fetch) <--- NEW FUNCTION
@@ -273,8 +336,8 @@ export const setIndicatorsData = (seriesMap, indicators, history) => {
         seriesMap.volume.setData(
             prepareVolumeData(
                 history,
-                volumeIndicator?.upColor || "#2c99c0",
-                volumeIndicator?.downColor || "#be292d" 
+                volumeIndicator?.upColor || "#74A6E2",
+                volumeIndicator?.downColor || "#AA3A37" 
             )
         );
     }
@@ -318,5 +381,14 @@ export const setIndicatorsData = (seriesMap, indicators, history) => {
         if (seriesMap.vp._customInstance) {
             seriesMap.vp._customInstance.setFullData(vpData);
         }
+    }
+
+    // FOOTPRINT 
+    if (seriesMap.fp) {
+        const fpConfig = indicators.find(i => i.id === "footprint");
+        const rowSize = Number(fpConfig?.rowSize) || 0.5;
+        
+        const fpData = prepareFootprintData(history, rowSize);
+        seriesMap.fp.setData(fpData);
     }
 };

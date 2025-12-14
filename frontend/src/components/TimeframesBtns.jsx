@@ -14,7 +14,7 @@ const TimeframeBtns = ({ timeframe, onSelectTimeframe }) => {
                 key={tf.value}
                 onClick={() => onSelectTimeframe(tf.value)}
                 className={`px-3 py-0 border-3 border-(--graphite) cursor-pointer rounded-sm
-                    ${timeframe === tf.value ? "bg-gray-700 text-(--text)" : "bg-transparent text-(--text)"}
+                    ${timeframe === tf.value ? "bg-(--primaryT) text-(--text) border-(--primary)" : "bg-transparent text-(--text)"}
                     hover:bg-(--primary)/40`}
                 >
                 {tf.label}

@@ -24,6 +24,7 @@ const Chart = ({
     chartSettings,
     onOpenTPOSettings,
     onOpenSVPSettings,
+    onOpenFpSettings,
     //offline
     isOffline,     
     offlineData,   
@@ -39,6 +40,7 @@ const Chart = ({
 
     const wsRef = useRef(null);
     const candlesRef = useRef([]); // local copy of history + live candles
+    const lastMsgRef = useRef([]);
 
     const [EMAsettingsOpen, setEMAsettingsOpen] = useState(false);
     const [volumeSettingsOpen, setVolumeSettingsOpen] = useState(false);
@@ -88,7 +90,7 @@ const Chart = ({
         indicatorsRef.current = indicators;
     }, [indicators]);
 
-    useChartIndicators(chartRef, seriesMapRef, indicators, candlesRef);
+    useChartIndicators(chartRef, seriesMapRef, indicators, candlesRef, priceSeriesRef);
 
     useChartSettings(chartRef, priceSeriesRef, chartSettings);
 
@@ -107,7 +109,7 @@ const Chart = ({
                 textColor: chartSettings.textColor,
                 background: { type: "solid", color: chartSettings.backgroundColor },
                 panes: {
-                    separatorColor: "#C7C3C5", // "#d83160",
+                    separatorColor: "#007ACC", 
                     separatorHoverColor: 'rgba(0, 168, 194, 0.1)',
                     enableResize: true,
             }},
@@ -155,56 +157,152 @@ const Chart = ({
 
     // update price and any active indicator(s) //////////////////////////////////////////////
     const handleRealtime = (msg) => {
-        let candle = null;
+        let rawCandle = null;
+        let diffData = null;
 
         if (isProMode) {
-            candle = {
+            // --- SERVER B (Pro) ---
+            const incoming = {
                 time: msg.time,
-                open: msg.open,
-                high: msg.high,
-                low: msg.low,
-                close: msg.close,
-                volume: msg.volume,
+                open: msg.open, high: msg.high, low: msg.low, close: msg.close,
+                volume: msg.volume, 
+                delta: msg.delta, footprint: msg.footprint 
             };
 
-            console.log("RICH DATA:", { 
-                delta: msg.delta, 
-                footprintLevels: Object.keys(msg.footprint).length 
-            });
-        }
-        else {
+            // 1. Calculate DIFFERENCE from last received message
+            const prev = lastMsgRef.current;
+            
+            if (prev && prev.time === incoming.time) {
+                // Same minute: Calculate diff
+                diffData = {
+                    ...incoming,
+                    volume: incoming.volume - prev.volume,
+                    delta: incoming.delta - prev.delta,
+                    footprint: getFootprintDiff(prev.footprint, incoming.footprint)
+                };
+            } else {
+                // New minute: Incoming IS the diff (starting from 0)
+                diffData = incoming;
+            }
+            
+            // Save state for next tick
+            lastMsgRef.current = incoming;
+            
+            // Use the diff for chart update
+            rawCandle = diffData;
+            
+        } else {
+            // --- SERVER A (Lite) ---
             if (!msg.k) return;
             const k = msg.k;
-
-            candle = {
+            rawCandle = {
                 time: Math.floor(k.t / 1000),
-                open: +k.o,
-                high: +k.h,
-                low: +k.l,
-                close: +k.c,
-                volume: +k.v,
+                open: +k.o, high: +k.h, low: +k.l, close: +k.c, volume: +k.v,
             };
         }
-        if (!candle) return;
+        
+        if (!rawCandle) return;
+
+        // 2. TIMEFRAME ALIGNMENT
+        const tfSeconds = getTimeframeSeconds(timeframe);
+        // Important: Use msg.time (actual time), not rawCandle.time (which might be diff)
+        const actualTime = isProMode ? msg.time : rawCandle.time; 
+        const bucketTime = Math.floor(actualTime / tfSeconds) * tfSeconds;
 
         let last = candlesRef.current[candlesRef.current.length - 1];
-        if (last && last.time === candle.time) {
-            candlesRef.current[candlesRef.current.length - 1] = candle;
+        let finalCandle = null;
+
+        // 3. MERGE OR PUSH
+        if (last && last.time === bucketTime) {
+            // Merge the DIFF into the existing bucket
+            finalCandle = mergeCandles(last, rawCandle);
+            candlesRef.current[candlesRef.current.length - 1] = finalCandle;
         } else {
-            candlesRef.current.push(candle);
+            // Start new bucket with current data
+            // For Pro Mode, rawCandle is a diff, but for a new bar, the diff is the starting value.
+            // We need to set the time correctly to the bucket time.
+            finalCandle = { ...rawCandle, time: bucketTime };
+            candlesRef.current.push(finalCandle);
         }
 
-        priceSeriesRef.current.update(candle);
+        // 4. Update Chart
+        if (priceSeriesRef.current) {
+            priceSeriesRef.current.update(finalCandle);
+        }
 
+        // 5. Update Indicators
         updateLiveIndicators(
             seriesMapRef.current, 
             indicatorsRef.current, 
             candlesRef.current
         );
-        
     };
 
     // load history + open websocket when symbol/timeframe change //////////////////////////////
+    const getFootprintDiff = (prevFp, currFp) => {
+        const diff = {};
+        if (!currFp) return diff;
+
+        Object.entries(currFp).forEach(([price, vol]) => {
+            // Get previous volume for this price (default to 0)
+            const prevVol = prevFp && prevFp[price] ? prevFp[price] : { buy: 0, sell: 0 };
+            
+            // Calculate increase
+            const buyDiff = vol.buy - prevVol.buy;
+            const sellDiff = vol.sell - prevVol.sell;
+
+            // If there is new volume, record it
+            // Note: We ignore negative diffs (which happen when Python resets the minute)
+            if (buyDiff > 0 || sellDiff > 0) {
+                diff[price] = {
+                    buy: buyDiff,
+                    sell: sellDiff
+                };
+            }
+        });
+        return diff;
+    };
+
+    const mergeCandles = (existing, incoming) => {
+        const merged = { ...existing };
+        
+        // 1. OHLC Update (Standard)
+        merged.high = Math.max(existing.high, incoming.high);
+        merged.low = Math.min(existing.low, incoming.low);
+        merged.close = incoming.close;
+        merged.volume = existing.volume + (incoming.volume || 0); // Add Diff Volume
+        
+        if (existing.delta !== undefined && incoming.delta !== undefined) {
+             merged.delta = existing.delta + incoming.delta;
+        }
+
+        // 2. Footprint Deep Merge
+        if (incoming.footprint) {
+            if (!merged.footprint) merged.footprint = {};
+
+            Object.entries(incoming.footprint).forEach(([price, vol]) => {
+                if (!merged.footprint[price]) {
+                    merged.footprint[price] = { buy: 0, sell: 0 };
+                }
+                // Add the Diff
+                merged.footprint[price].buy += vol.buy;
+                merged.footprint[price].sell += vol.sell;
+            });
+        }
+        return merged;
+    };
+
+    const getTimeframeSeconds = (tf) => {
+        if (tf === "1m") return 60;
+        if (tf === "3m") return 180;
+        if (tf === "5m") return 300;
+        if (tf === "15m") return 900;
+        if (tf === "30m") return 1800;
+        if (tf === "1h") return 3600;
+        if (tf === "4h") return 14400;
+        return 60;
+    };
+
     React.useEffect(() => {
         if (!chartRef.current) return;
 
@@ -235,33 +333,63 @@ const Chart = ({
             return;
         }
 
-        fetch(`http://localhost:3001/history/${selectedAsset}/${timeframe}`)
+        // Reset websocket
+        let historyUrl = "";
+        let wsUrl = "";
+        
+        if (isProMode) {
+            console.log("Connecting to Orderflow Engine (Server B)...");
+            historyUrl = `http://localhost:8000/history/footprint?symbol=${selectedAsset}&timeframe=${timeframe}`;
+            wsUrl = "ws://localhost:8000/ws";
+        } else {
+            console.log("Connecting to Standard Proxy (Server A)...");
+            historyUrl = `http://localhost:3001/history/${selectedAsset}/${timeframe}`;
+            wsUrl = `ws://localhost:3001?symbol=${selectedAsset}&timeframe=${timeframe}`;
+        }
+
+        //fetch(`http://localhost:3001/history/${selectedAsset}/${timeframe}`)
+        fetch(historyUrl)
         .then(r => r.json())
         .then(history => {
             if (!isMounted) return;
+             // Safety: If Pro Mode returns empty (no ticks in DB yet)
+            if (isProMode && (!history || history.length === 0)) {
+                console.warn("No Orderflow history found. Start the Ingestor!");
+                setLoading(false);
+                return;
+            }
             candlesRef.current = history;
             priceSeriesRef.current.setData(history);
             setIndicatorsData(seriesMapRef.current, indicatorsRef.current, history);
+            //chartRef.current.priceScale('right').applyOptions({ autoScale: true });
+            //chartRef.current.timeScale().fitContent();
+
+            // auto zoom for Footprint
+            const hasFootprint = indicatorsRef.current.find(i => i.id === 'footprint' && i.visible !== false);
+            if (hasFootprint && history.length > 0) {
+                // Zoom to last 20 candles
+                const total = history.length;
+                const from = Math.max(0, total - 20); 
+                const to = total;
+                
+                chartRef.current.timeScale().setVisibleLogicalRange({ from, to });
+            } else {
+                // Default behavior
+                chartRef.current.timeScale().fitContent();
+            }
 
             chartRef.current.priceScale('right').applyOptions({ autoScale: true });
-            chartRef.current.timeScale().fitContent();
+
         })
         .catch(err => console.error("History fetch error:", err))
         .finally(() =>{ if (isMounted) setLoading(false); });
 
-        // Reset websocket
-        let url = "";
-        
-        if (isProMode) {
-            console.log("Connecting to Orderflow Engine (Server B)...");
-            url = "ws://localhost:8000/ws";
-        } else {
-            console.log("Connecting to Standard Proxy (Server A)...");
-            url = `ws://localhost:3001?symbol=${selectedAsset}&timeframe=${timeframe}`;
-        }
 
         //wsRef.current = new WebSocket(`ws://localhost:3001?symbol=${selectedAsset}&timeframe=${timeframe}`);
-        wsRef.current = new WebSocket(url);
+        if (wsRef.current) {
+            wsRef.current.close();
+        }
+        wsRef.current = new WebSocket(wsUrl);
         wsRef.current.onopen = () => console.log(`Connected to ${isProMode ? "PRO" : "LITE"} stream`);
         wsRef.current.onmessage = (evt) => handleRealtime(JSON.parse(evt.data));
         wsRef.current.onerror = (e) => console.warn("WS error", e);
@@ -275,6 +403,7 @@ const Chart = ({
         };
 
     }, [selectedAsset, timeframe, isOffline, offlineData, isProMode]);
+
 
     // handles Window Resize, Panel Resize, and Dragging automatically
     useEffect(() => {
@@ -306,6 +435,20 @@ const Chart = ({
         return () => resizeObserver.disconnect();
         
     }, [renderDrawings]);
+
+    // dynamic zoom when adding indicator
+    // If user clicks "Add Footprint" while already viewing the chart
+    useEffect(() => {
+        const hasFootprint = indicators.find(i => i.id === 'footprint' && i.visible !== false);
+        
+        if (hasFootprint && chartRef.current && candlesRef.current.length > 0) {
+            const total = candlesRef.current.length;
+            const from = Math.max(0, total - 20);
+            const to = total + 2; // +2 for whitespace right
+            
+            chartRef.current.timeScale().setVisibleLogicalRange({ from, to });
+        }
+    }, [indicators]);
 
 
     /// Indicators ////////////////////////////////////////////////////////////////////////
@@ -520,26 +663,31 @@ const Chart = ({
                             <div className="flex gap-2 items-center ml-8">
                                 <button onClick={() => handleToggleVisibility(i)}
                                 title={ind.visible === false ? "Show" : "Hide"}
-                                className="hover:text-(--red) cursor-pointer">
+                                className="hover:text-(--primary) cursor-pointer">
                                     {ind.visible === false ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
                                 </button>
                                 {ind.id == "volume" && (
-                                    <button onClick={() => openVolumeSettings(ind)} className="hover:text-(--red) cursor-pointer" title="Settings">
+                                    <button onClick={() => openVolumeSettings(ind)} className="hover:text-(--primary) cursor-pointer" title="Settings">
                                         <Settings className="w-4 h-4"/>
                                     </button>
                                 )}
                                 {ind.id == "ema" && (
-                                    <button onClick={() => openEMAsettings(ind)} className="hover:text-(--red) cursor-pointer" title="Settings">
+                                    <button onClick={() => openEMAsettings(ind)} className="hover:text-(--primary) cursor-pointer" title="Settings">
                                         <Settings className="w-4 h-4"/>
                                     </button>
                                 )}
                                 {ind.id == "tpo" && (
-                                    <button onClick={() => onOpenTPOSettings(ind)} className="hover:text-(--red) cursor-pointer" title="Settings">
+                                    <button onClick={() => onOpenTPOSettings(ind)} className="hover:text-(--primary) cursor-pointer" title="Settings">
                                         <Settings className="w-4 h-4"/>
                                     </button>
                                 )}
                                 {ind.id == "svp" && (
-                                    <button onClick={() => onOpenSVPSettings(ind)} className="hover:text-(--red) cursor-pointer" title="Settings">
+                                    <button onClick={() => onOpenSVPSettings(ind)} className="hover:text-(--primary) cursor-pointer" title="Settings">
+                                        <Settings className="w-4 h-4"/>
+                                    </button>
+                                )}
+                                {ind.id == "footprint" && (
+                                    <button onClick={() => onOpenFpSettings(ind)} className="hover:text-(--primary) cursor-pointer" title="Settings">
                                         <Settings className="w-4 h-4"/>
                                     </button>
                                 )}
@@ -560,7 +708,7 @@ const Chart = ({
                 />
             </div>
 
-            <div ref={toolbarRef} className="fixed top-20 left-1/2 transform -translate-x-1/2 z-45 flex gap-2 bg-(--gray) border-3 border-(--graphite) p-1 rounded-sm shadow-lg items-center">
+            <div ref={toolbarRef} className="fixed top-20 left-1/2 transform -translate-x-1/2 z-45 flex gap-2 bg-(--gray) border-2 border-(--graphite) p-1 rounded-sm shadow-lg items-center">
                 <div ref={toolbarHandleRef} 
                 className="ml-2 cursor-grab active:cursor-grabbing text-(--text)/40 hover:text-(--text)">
                     <GripVertical size={18}/>
@@ -583,7 +731,7 @@ const Chart = ({
                 </button>
                 <button onClick={() => setCurrentTool('rect')}
                 title="Rect"
-                className={`p-2 rounded hover:bg-gray-700 ${currentTool === 'rect' ? 'bg-(--primary)' : ''}`}>
+                className={`p-2 rounded hover:bg-(--primary)/40${currentTool === 'rect' ? 'bg-(--primary)' : ''}`}>
                     <Square size={18} />
                 </button>
                  <div className="w-px h-6 bg-gray-600 mx-1"></div>

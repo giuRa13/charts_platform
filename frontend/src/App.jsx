@@ -7,9 +7,11 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import IndicatorsModal from "./components/modals/IndicatorsModal";
 import ChartSettings from "./components/modals/ChartSettings";
 import TPOsSettings from "./components/modals/TPOsSettings";
-import { Menu, Settings  } from "lucide-react";
+import { ClockIcon, Menu, MousePointer2, Pencil, Settings  } from "lucide-react";
 import SVPSettings from "./components/modals/SVPSettings";
 import axios from "axios";
+import FootprintSettings from "./components/modals/FootprintSettings";
+import FootprintAllert from "./components/modals/FootprintAllert";
 
 
 function App() {
@@ -29,16 +31,18 @@ function App() {
 
   const [tpoSettingsOpen, setTpoSettingsOpen] = useState(false);
   const [svpSettingsOpen, setSvpSettingsOpen] = useState(false);
+  const [fpSettingsOpen, setFpSettingsOpen] = useState(false);
+  const [fpAllertOpen, setFpAllertOpen] = useState(false);
 
   const [showChartSettings, setShowChartSettings] = useState(false);
   const [chartConfig, setChartConfig] = useState({
-      backgroundColor: "#161616", /*"#131419",*/ /*"#000101",*///"#1e1e1e",
+      backgroundColor: "#131414", /*"#161616",*/ /*"#131419",*/ 
       textColor: "#DCEDE3",
       gridColor: "#303030",
       gridVertVisible: false,
       gridHorzVisible: false,
-      candleUpColor: "#2c99c0", //"#008080",//"#088F79", 
-      candleDownColor: "#be292d", // "#F33644", 
+      candleUpColor: "#74A6E2", 
+      candleDownColor: "#AA3A37", 
       magnetMode: false,
       showClock: false,
       clockColor: "#DCEDE3",
@@ -54,7 +58,7 @@ function App() {
 
       if (indicatorId === "volume") {
         if (prev.find(ind => ind.id === "volume")) return prev;
-        return [...prev, { id: "volume" , upColor: "#2c99c0", downColor: "#be292d" }];
+        return [...prev, { id: "volume" , upColor: "#74A6E2", downColor: "#AA3A37" }];
       }
 
       if (indicatorId === "ema") {
@@ -102,6 +106,24 @@ function App() {
           }];
       }
 
+
+      if (indicatorId === "footprint") {
+        if (isOffline) {
+          setFpAllertOpen(true); // Reusing the same alert, or make a specific string
+          return prev; 
+        }
+        if (!isProMode) {
+          setFpAllertOpen(true);
+          return prev;
+        }
+        if (prev.find(ind => ind.id === "footprint")) return prev;
+        return [...prev, { 
+          id: "footprint", 
+          colorText: '#FFFFFF', 
+          rowSize: 10,
+        }];
+      }
+      
       const newIndicator = {
         id: indicatorId,
         visible: true,
@@ -125,6 +147,13 @@ function App() {
           i.id === "svp" ? { ...i, ...updatedIndicator } : i
       ));
       setSvpSettingsOpen(false);
+  };
+
+  const saveFpSettings = (updatedIndicator) => {
+      setIndicators(prev => prev.map(i => 
+          i.id === "footprint" ? { ...i, ...updatedIndicator } : i
+      ));
+      setFpSettingsOpen(false);
   };
 
   useEffect(() => {
@@ -171,6 +200,13 @@ function App() {
     }
   };
 
+  const handleToggleClock = () => {
+    setChartConfig(prev => ({
+      ...prev,
+      showClock: !prev.showClock
+    }));
+  };
+
   return (
     <div className="w-screen h-screen flex flex-col bg-(--gray) text-(--text)">
 
@@ -212,6 +248,22 @@ function App() {
           />
       )}
 
+      {fpSettingsOpen && (
+        <FootprintSettings
+          open={fpSettingsOpen}
+          onClose={() => setFpSettingsOpen(false)}
+          initial={indicators.find(i => i.id === "footprint")}
+          onSave={saveFpSettings}
+        />
+      )}
+
+      {fpAllertOpen && (
+        <FootprintAllert
+          open={fpAllertOpen}
+          onClose={() => setFpAllertOpen(false)}
+        />
+      )}
+
       <TopBar
         assets={assetsList}
         selectedAsset={selectedAsset}
@@ -226,9 +278,16 @@ function App() {
       />
 
       {/* Main content */}
-      <div className="flex-1 overflow-hidden"> {/*style={{ height: 'calc(100vh - 4rem)'  4rem = 16 * 1rem (top bar height) */}
-        <PanelGroup direction="horizontal">
+      {/*</div><div className="flex-1 overflow-hidden"> */}
+      <div className="flex-1 overflow-hidden flex flex-row"> 
+
+        {/* LEFT SIDEBAR */}
+        <div className="flex-shrink-0 w-16 bg-(--gray) flex flex-col p-2 border-r-4 border-(--graphite) items-center">
+        </div>
+        
         {/* Chart */}
+        <div className="flex-1 min-w-0">
+        <PanelGroup direction="horizontal">
         <Panel minSize={20}>
         {/*<div className="flex-1 min-w-0">*/}
          <div className="w-full h-full">
@@ -240,6 +299,7 @@ function App() {
             indicators={indicators} 
             onOpenTPOSettings={() => setTpoSettingsOpen(true)} 
             onOpenSVPSettings={() => setSvpSettingsOpen(true)} 
+            onOpenFpSettings={() => setFpSettingsOpen(true)} 
             onIndicatorsChange={setIndicators}
             chartSettings={chartConfig}
             //offline props
@@ -261,17 +321,28 @@ function App() {
         )}
 
       {/* Right sidebar */}
-      <div className="flex-shrink-0 w-18 bg-(--gray) flex flex-col p-2 border-l-4 border-(--graphite)">
-        <button className="mb-2 px-2 py-2 bg-(--primary) rounded-sm flex items-center justify-center cursor-pointer hover:opacity-70"
+      <div className="flex-shrink-0 w-16 bg-(--gray) flex flex-col p-2 border-l-4 border-(--graphite)">
+        <button className="mb-2 px-2 py-2 flex items-center justify-center cursor-pointer hover:opacity-70"
+        title="Open List"
         onClick={() => setIsPanelOpen(p => !p)}>
           <Menu className="w-6 h-6"/>
         </button>
-        <button className="mb-2 px-2 py-2 bg-(--primary) rounded-sm flex items-center justify-center cursor-pointer hover:opacity-70"
+        <div className="w-full h-px bg-(--graphite) my-1"></div>
+        <button className="mb-2 px-2 py-2 flex items-center justify-center cursor-pointer hover:opacity-70"
+        title="Settings"
         onClick={() => setShowChartSettings(true)}>
           <Settings className="w-6 h-6"/>
         </button>
+        <div className="w-full h-px bg-(--graphite) my-1"></div>
+        <button className="mb-2 px-2 py-2 flex items-center justify-center cursor-pointer hover:opacity-70"
+        title="Toggle Clock"
+        onClick={handleToggleClock}>
+          <ClockIcon className="w-6 h-6"/>
+        </button>
+        <div className="w-full h-px bg-(--graphite) my-1"></div>
       </div>
       </PanelGroup>
+    </div>
     </div>
 
     <BottomBar

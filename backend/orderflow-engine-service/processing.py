@@ -36,7 +36,7 @@ class CandleAggregator:
 
         # 5. Update Footprint (Volume Profile inside candle)
         # Key string must be price for JSON compatibility
-        p_str = str(price)
+        p_str = f"{price:.8f}".rstrip('0').rstrip('.') # Normalize price key
         if p_str not in c["footprint"]:
             c["footprint"][p_str] = {"buy":0, "sell":0}
 

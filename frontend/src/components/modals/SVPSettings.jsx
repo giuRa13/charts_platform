@@ -41,16 +41,16 @@ const SVPSettings = ({ open, onClose, initial, onSave }) => {
                     step="0.1" // Allow decimals (e.g. 0.5 or 0.1)
                     min="0.00001"
                     value={rowSize}  
-                    className='w-20 bg-[#161616] text-white px-2 py-1 border border-(--primary) outline-none text-right'/>
+                    className='w-20 bg-(--black) text-white px-2 py-1 border border-(--graphite) outline-none text-right'/>
                 </div>
                 <div className='flex justify-between'>
                     <label className='text-sm'>Width (px)</label>
                     <input onChange={e=>setWidth(e.target.value)}
                     type='number' 
                     value={width}  
-                    className='w-20 bg-[#161616] text-white px-2 py-1 border border-(--primary) outline-none text-right'/>
+                    className='w-20 bg-(--black) text-white px-2 py-1 border border-(--graphite) outline-none text-right'/>
                 </div>
-                <div className='border-t border-gray-700'></div>
+                <div className='border-t border-(--graphite)'></div>
                 
                 <div className='flex justify-between items-center'>
                     <label className='text-sm'>POC Color</label>
@@ -76,7 +76,7 @@ const SVPSettings = ({ open, onClose, initial, onSave }) => {
                         step="1" // Allow decimals (e.g. 0.5 or 0.1)
                         min="-200"
                         onChange={e=>setXOffset(e.target.value)} 
-                        className='w-20 bg-[#161616] text-white px-2 py-1 border border-(--primary) outline-none text-right'/>
+                        className='w-20 bg-(--black) text-white px-2 py-1 border border-(--graphite) outline-none text-right'/>
                 </div>
                 <div className='flex items-center justify-between'>
                     <label className='text-sm'>Show VAH / VAL</label>
@@ -98,7 +98,7 @@ const SVPSettings = ({ open, onClose, initial, onSave }) => {
                 </div>
 
                 <div className="flex justify-end gap-2 mt-2">
-                    <button onClick={handleSave} className="px-4 py-1 bg-(--primary) text-white rounded-sm text-xs font-bold hover:opacity-80">Save</button>
+                    <button onClick={handleSave} className="px-4 py-1 w-[50%] bg-(--primary) text-white text-xs font-bold hover:opacity-80">Save</button>
                 </div>
             </div>
         </Modal>

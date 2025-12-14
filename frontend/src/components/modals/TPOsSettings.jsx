@@ -88,7 +88,7 @@ const TPOsSettings = ({ open, onClose, initial, onSave }) => {
                         min={1}
                         value={blockSize}
                         onChange={(e) => setBlockSize(e.target.value)}
-                        className='w-20 bg-[#161616] text-white px-2 py-1 border border-(--primary) outline-none text-right'
+                        className='w-20 bg-[#161616] text-white px-2 py-1 border border-(--graphite) outline-none text-right'
                     />
                 </div>
                 <div className='flex items-center justify-between'>
@@ -98,7 +98,7 @@ const TPOsSettings = ({ open, onClose, initial, onSave }) => {
                         min={1}
                         value={blockWidth}
                         onChange={(e) => setBlockWidth(e.target.value)}
-                        className='w-20 bg-[#161616] text-white px-2 py-1 border border-(--primary) outline-none text-right'
+                        className='w-20 bg-[#161616] text-white px-2 py-1 border border-(--graphite) outline-none text-right'
                     />
                 </div>
 
@@ -194,14 +194,14 @@ const TPOsSettings = ({ open, onClose, initial, onSave }) => {
 
                 <div className='flex items-center justify-end'>
                     <button onClick={() => defaultColors()}
-                    className='w-[50%] items-center bg-(--primary) py-0.5 rounded-sm justify-end'>
+                    className='w-[50%] items-center bg-gray-700 py-0.5 justify-end'>
                         Default Colors
                     </button>
                 </div>
 
-                <div className="flex justify-end gap-2 mt-2 pt-2 border-t border-(--primary)">
-                    <button onClick={onClose} className="py-1 px-4 bg-(--red) rounded-sm hover:opacity-80 text-sm">Cancel</button>
-                    <button onClick={handleSave} className="py-1 px-4 bg-(--primary) rounded-sm hover:opacity-80 text-sm">Save</button>
+                <div className="flex justify-between gap-2 mt-2 pt-2 border-t border-(--graphite)">
+                    <button onClick={onClose} className="w-full py-1 px-4 bg-(--red) hover:opacity-80 text-sm">Cancel</button>
+                    <button onClick={handleSave} className="w-full py-1 px-4 bg-(--primary) hover:opacity-80 text-sm">Save</button>
                 </div>
             
             </div>

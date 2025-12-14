@@ -74,12 +74,12 @@ const TopBar = ({ assets, selectedAsset, onSelectAsset, timeframe, onSelectTimef
 
       <div className="flex justify-end gap-8 pr-4">
         <button onClick={onOpenIndicators}
-        className="px-4 py-1 flex items-center gap-2 bg-(--primary) hover:opacity-70 cursor-pointer rounded-sm text-(--text)">
+        className="px-4 py-1 flex items-center gap-2 bg-(--primaryT) border border-(--primary) hover:opacity-70 cursor-pointer text-(--text)">
           <ChartLineIcon size={22}/>
           Indicators
         </button>
         {!isOffline && (
-            <label className="px-3 py-1 flex items-center gap-2 bg-(--primary) hover:opacity-70 cursor-pointer rounded-sm text-sm font-medium transition-colors">
+            <label className="px-3 py-1 flex items-center gap-2 bg-(--primaryT) hover:opacity-70 cursor-pointer text-sm font-medium border border-(--primary) transition-colors">
                 <Upload size={16} />
                 <span>Import Data</span>
                 <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
@@ -87,12 +87,12 @@ const TopBar = ({ assets, selectedAsset, onSelectAsset, timeframe, onSelectTimef
         )}
         {!isOffline ? (
           <div className="flex items-center gap-2 text-sm">
-            <div className="w-4 h-4 rounded-full bg-green-400"></div>
+            <div className="w-3 h-3 rounded-full bg-green-400"></div>
             <span>Live Data</span>
           </div>
         ) : (
           <div className="flex items-center gap-2 text-sm">
-            <div className="w-4 h-4 rounded-full bg-yellow-400"></div>
+            <div className="w-3 h-3 rounded-full bg-orange-400"></div>
             <span>Offline Data</span>
           </div>
         )}

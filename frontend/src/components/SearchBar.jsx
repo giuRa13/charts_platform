@@ -65,7 +65,7 @@ const SearchBar = ({assets, onSelectAsset}) => {
                         setQuery("");
                         setOpen(false);
                     }}
-                    className="px-3 py-2 cursor-pointer hover:bg-(--primary) hover:text-black"
+                    className="px-3 py-2 cursor-pointer hover:bg-(--primaryT) hover:text-black"
                     >
                         {highlightmatch(asset.symbol, query)}
                     </div>
