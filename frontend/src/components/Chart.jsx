@@ -264,31 +264,39 @@ const Chart = ({
     };
 
     const mergeCandles = (existing, incoming) => {
-        const merged = { ...existing };
-        
-        // 1. OHLC Update (Standard)
+        // Deep clone the existing candle to avoid mutation side-effects
+        const merged = { 
+            ...existing,
+            // Important: Create a shallow copy of the footprint map 
+            // so we don't mutate the old reference in place
+            footprint: existing.footprint ? { ...existing.footprint } : {}
+        };
+
+        // 1. OHLC Update
         merged.high = Math.max(existing.high, incoming.high);
         merged.low = Math.min(existing.low, incoming.low);
         merged.close = incoming.close;
-        merged.volume = existing.volume + (incoming.volume || 0); // Add Diff Volume
-        
+        merged.volume = existing.volume + (incoming.volume || 0);
+
         if (existing.delta !== undefined && incoming.delta !== undefined) {
              merged.delta = existing.delta + incoming.delta;
         }
 
-        // 2. Footprint Deep Merge
+        // 2. Footprint Update
         if (incoming.footprint) {
-            if (!merged.footprint) merged.footprint = {};
-
             Object.entries(incoming.footprint).forEach(([price, vol]) => {
+                // If price exists, clone that object too before modifying
                 if (!merged.footprint[price]) {
                     merged.footprint[price] = { buy: 0, sell: 0 };
+                } else {
+                    merged.footprint[price] = { ...merged.footprint[price] };
                 }
-                // Add the Diff
+                
                 merged.footprint[price].buy += vol.buy;
                 merged.footprint[price].sell += vol.sell;
             });
         }
+        
         return merged;
     };
 

@@ -217,7 +217,7 @@ export const useChartIndicators = (
 
             // 2. Create Series
             if (!seriesMapRef.current.fp) {
-                const seriesInstance = new FootprintSeries();
+                const seriesInstance = new FootprintSeries(chart);
                 const series = chart.addCustomSeries(seriesInstance, {
                      priceScaleId: 'right' 
                 });
@@ -237,7 +237,12 @@ export const useChartIndicators = (
                 maxBars: Number(fpIndicator.maxBars) || 20, 
                 showPOC: fpIndicator.showPOC !== false,
                 colorPOC: fpIndicator.colorPOC || "#FFFF00",
-                alphaContrast: fpIndicator.alphaContrast,
+                alphaContrast: fpIndicator.alphaContrast || 15,
+                showImbalance: fpIndicator.showImbalance !== false,
+                imbalanceRatio: Number(fpIndicator.imbalanceRatio) || 3.0,
+                imbalanceMinValue: Number(fpIndicator.imbalanceMinValue) || 5,
+                imbAskColor: fpIndicator.imbAskColor || "#0011ff",
+                imbBidColor: fpIndicator.imbBidColor || "#FF0000",
                 visible: isFpVisible
             });
         }
